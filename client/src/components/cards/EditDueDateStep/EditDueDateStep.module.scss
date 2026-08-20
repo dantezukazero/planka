@@ -11,6 +11,32 @@
     right: 9px;
   }
 
+  .datePicker {
+    :global(.calendar-date-range-middle) {
+      background-color: rgba(33, 107, 165, 0.22);
+      color: #17394d;
+    }
+
+    :global(.calendar-date-range-start),
+    :global(.calendar-date-range-end) {
+      background-color: #216ba5;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    :global(.calendar-date-range-start) {
+      box-shadow: inset 3px 0 #17394d;
+    }
+
+    :global(.calendar-date-range-end) {
+      box-shadow: inset -3px 0 #17394d;
+    }
+
+    :global(.calendar-date-range-start.calendar-date-range-end) {
+      box-shadow: inset 3px 0 #17394d, inset -3px 0 #17394d;
+    }
+  }
+
   .fieldBox {
     display: inline-block;
     margin: 0 4px 12px;

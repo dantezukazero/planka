@@ -43,8 +43,19 @@ Feature: Board calendar
     When the user selects the Agenda calendar view
     Then the configured range card should be visible in the calendar
     When the user selects the Month calendar view
-    Then the configured range card should expose an end resize handle
+    Then the configured range card should expose start and end resize handles
     When the user drags the configured range card to the next day
     And the user extends the configured range card by one day
+    And the user moves the start of the configured range card one day later
     And the user reloads the board
     Then the configured range card should be visible in the calendar
+
+  Scenario: Turn a due-only calendar event into a persistent range by resizing
+    Given the user is logged in with email or username "demo" and password "demo"
+    And the configured calendar board is open
+    When the user selects the Calendar board view
+    Then the configured due-only resize card should be visible in the calendar
+    When the user extends the configured due-only resize card by one day
+    And the user reloads the board
+    And the user opens the configured due-only resize card from the calendar
+    Then the open card should show a date range

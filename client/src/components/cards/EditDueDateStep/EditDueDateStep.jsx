@@ -14,6 +14,10 @@ import { Input, Popup } from '../../../lib/custom-ui';
 import selectors from '../../../selectors';
 import entryActions from '../../../entry-actions';
 import { useForm, useNestedRef } from '../../../hooks';
+import {
+  getDateRangeDayClassName,
+  getDateRangePickerSelection,
+} from '../../../utils/date-range-picker';
 import parseTime from '../../../utils/parse-time';
 
 import styles from './EditDueDateStep.module.scss';
@@ -81,9 +85,9 @@ const EditDueDateStep = React.memo(({ cardId, onBack, onClose }) => {
   const [hasRangeError, setHasRangeError] = useState(false);
 
   const [startDateFieldRef, handleStartDateFieldRef] = useNestedRef('inputRef');
-  const [startTimeFieldRef, handleStartTimeFieldRef] = useNestedRef('inputRef');
+  const [, handleStartTimeFieldRef] = useNestedRef('inputRef');
   const [dueDateFieldRef, handleDueDateFieldRef] = useNestedRef('inputRef');
-  const [dueTimeFieldRef, handleDueTimeFieldRef] = useNestedRef('inputRef');
+  const [, handleDueTimeFieldRef] = useNestedRef('inputRef');
 
   const nullableStartDate = useMemo(
     () => parseDateTimeFields(data.startDate, data.startTime, t),
@@ -158,21 +162,38 @@ const EditDueDateStep = React.memo(({ cardId, onBack, onClose }) => {
 
   const handleDatePickerChange = useCallback(
     (date) => {
-      setData((prevData) => ({
-        ...prevData,
-        [`${activeField}Date`]: t('format:date', {
-          postProcess: 'formatDate',
-          value: date,
-        }),
-      }));
-
-      if (activeField === 'start') {
-        startTimeFieldRef.current.select();
-      } else {
-        dueTimeFieldRef.current.select();
+      const selection = getDateRangePickerSelection({
+        activeField,
+        date,
+        startDate: nullableStartDate,
+        dueDate: nullableDueDate,
+      });
+      if (!selection) {
+        return;
       }
+
+      const dueFields = createDateTimeFields(selection.dueDate, t);
+      if (activeField === 'start') {
+        const startFields = createDateTimeFields(selection.startDate, t);
+        setData((prevData) => ({
+          ...prevData,
+          startDate: startFields.date,
+          startTime: startFields.time,
+          dueDate: dueFields.date,
+          dueTime: dueFields.time,
+        }));
+      } else {
+        setData((prevData) => ({
+          ...prevData,
+          dueDate: dueFields.date,
+          dueTime: dueFields.time,
+        }));
+      }
+
+      setHasRangeError(false);
+      setActiveField(selection.activeField);
     },
-    [activeField, dueTimeFieldRef, setData, startTimeFieldRef, t],
+    [activeField, nullableDueDate, nullableStartDate, setData, t],
   );
 
   useEffect(() => {
@@ -184,6 +205,15 @@ const EditDueDateStep = React.memo(({ cardId, onBack, onClose }) => {
   }, [activeField, dueDateFieldRef, hasStartDate, startDateFieldRef]);
 
   const activeDate = activeField === 'start' ? nullableStartDate : nullableDueDate;
+  const visibleStartDate =
+    hasStartDate && nullableStartDate && nullableDueDate && nullableStartDate <= nullableDueDate
+      ? nullableStartDate
+      : null;
+  const visibleDueDate = visibleStartDate ? nullableDueDate : null;
+  const handleDateClassName = useCallback(
+    (date) => getDateRangeDayClassName(date, visibleStartDate, visibleDueDate),
+    [visibleDueDate, visibleStartDate],
+  );
 
   return (
     <>
@@ -253,12 +283,21 @@ const EditDueDateStep = React.memo(({ cardId, onBack, onClose }) => {
             </div>
           </div>
           {hasRangeError && <div className={styles.error}>{t('common.invalidDateRange')}</div>}
-          <DatePicker
-            inline
-            disabledKeyboardNavigation
-            selected={activeDate}
-            onChange={handleDatePickerChange}
-          />
+          <div
+            className={styles.datePicker}
+            data-testid="date-range-picker"
+            data-active-field={activeField}
+          >
+            <DatePicker
+              inline
+              disabledKeyboardNavigation
+              selected={activeDate}
+              startDate={visibleStartDate}
+              endDate={visibleDueDate}
+              dayClassName={handleDateClassName}
+              onChange={handleDatePickerChange}
+            />
+          </div>
           <Button positive content={t('action.save')} />
         </Form>
         <Button

@@ -9,7 +9,7 @@ export const applyCalendarEditingPermissions = (events, canEdit) =>
   events.map((event) => ({
     ...event,
     startEditable: canEdit,
-    durationEditable: canEdit && event.extendedProps.isDateRange,
+    durationEditable: canEdit,
   }));
 
 export const getCalendarEventUpdate = (event) => {
@@ -69,15 +69,77 @@ export const getCalendarEventDropUpdate = (event, oldEvent) => {
   };
 };
 
+export const getCalendarEventResizeUpdate = (event, oldEvent) => {
+  if (!event || !oldEvent || !isValidDate(event.start) || !isValidDate(oldEvent.start)) {
+    return null;
+  }
+
+  if (!oldEvent.extendedProps.isDateRange) {
+    if (event.start.getTime() !== oldEvent.start.getTime()) {
+      if (event.start.getTime() > oldEvent.start.getTime()) {
+        return null;
+      }
+
+      return {
+        startDate: event.start,
+        dueDate: oldEvent.start,
+      };
+    }
+
+    if (!isValidDate(event.end) || oldEvent.start.getTime() > event.end.getTime()) {
+      return null;
+    }
+
+    return {
+      startDate: oldEvent.start,
+      dueDate: event.end,
+    };
+  }
+
+  if (
+    !event.extendedProps.isDateRange ||
+    !isValidDate(event.end) ||
+    !isValidDate(oldEvent.end) ||
+    event.start.getTime() > event.end.getTime()
+  ) {
+    return null;
+  }
+
+  const isStartChanged = event.start.getTime() !== oldEvent.start.getTime();
+  const isEndChanged = event.end.getTime() !== oldEvent.end.getTime();
+
+  if (isStartChanged === isEndChanged) {
+    return null;
+  }
+
+  return isStartChanged ? { startDate: event.start } : { dueDate: event.end };
+};
+
+export const getCalendarEventResizeRollbackUpdate = (oldEvent, event) => {
+  if (!oldEvent || !isValidDate(oldEvent.start)) {
+    return null;
+  }
+
+  if (!oldEvent.extendedProps.isDateRange) {
+    return {
+      startDate: null,
+      dueDate: oldEvent.start,
+    };
+  }
+
+  return getCalendarEventResizeUpdate(oldEvent, event);
+};
+
 export const saveCalendarEventChange = ({
   event,
   oldEvent,
   revert,
   updateCard,
   getUpdate = getCalendarEventUpdate,
+  getRollbackUpdate = getCalendarEventUpdate,
 }) => {
   const data = getUpdate(event, oldEvent);
-  const rollbackData = getCalendarEventUpdate(oldEvent);
+  const rollbackData = getRollbackUpdate(oldEvent, event);
 
   if (!data || !rollbackData) {
     revert();

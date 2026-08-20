@@ -29,6 +29,18 @@ When('the user extends the configured range card by one day', async () => {
   await calendarPage.extendRangeCardByOneDay();
 });
 
+When('the user moves the start of the configured range card one day later', async () => {
+  await calendarPage.moveRangeCardStartOneDayLater();
+});
+
+When('the user extends the configured due-only resize card by one day', async () => {
+  await calendarPage.extendDueOnlyCardByOneDay();
+});
+
+When('the user opens the configured due-only resize card from the calendar', async () => {
+  await calendarPage.getDueOnlyResizeCardEvent().click();
+});
+
 When('the user selects the Week calendar view', async () => {
   await calendarPage.selectCalendarSubview('timeGridWeek');
 });
@@ -66,8 +78,13 @@ Then('the configured range card should be visible in the calendar', async () => 
   await expect(calendarPage.getRangeCardEvent()).toBeVisible();
 });
 
-Then('the configured range card should expose an end resize handle', async () => {
-  await expect(calendarPage.getRangeCardResizeHandle()).toBeAttached();
+Then('the configured due-only resize card should be visible in the calendar', async () => {
+  await expect(calendarPage.getDueOnlyResizeCardEvent()).toBeVisible();
+});
+
+Then('the configured range card should expose start and end resize handles', async () => {
+  await expect(calendarPage.getRangeCardStartResizeHandle()).toBeAttached();
+  await expect(calendarPage.getRangeCardEndResizeHandle()).toBeAttached();
 });
 
 Then('the Month calendar view should be visible', async () => {

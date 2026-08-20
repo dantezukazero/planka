@@ -39,6 +39,8 @@ import { loadFullCalendarLocale } from '../../../utils/fullcalendar-locales';
 import {
   applyCalendarEditingPermissions,
   getCalendarEventDropUpdate,
+  getCalendarEventResizeRollbackUpdate,
+  getCalendarEventResizeUpdate,
   saveCalendarEventChange,
 } from '../../../utils/calendar-event-editing';
 import MonthPickerStep from './MonthPickerStep';
@@ -157,12 +159,13 @@ const CalendarView = React.memo(() => {
   );
 
   const saveEventChange = useCallback(
-    ({ event, oldEvent, revert }, getUpdate) => {
+    ({ event, oldEvent, revert }, getUpdate, getRollbackUpdate) => {
       saveCalendarEventChange({
         event,
         oldEvent,
         revert,
         getUpdate,
+        getRollbackUpdate,
         updateCard: (cardId, data, options) => {
           dispatch(entryActions.updateCard(cardId, data, options));
         },
@@ -180,7 +183,7 @@ const CalendarView = React.memo(() => {
 
   const handleEventResize = useCallback(
     (info) => {
-      saveEventChange(info);
+      saveEventChange(info, getCalendarEventResizeUpdate, getCalendarEventResizeRollbackUpdate);
     },
     [saveEventChange],
   );
@@ -295,14 +298,15 @@ const CalendarView = React.memo(() => {
           events={editableEvents}
           eventOrder="start,title"
           eventClass="calendar-card-event"
-          eventAfterClass="calendar-card-resize-handle"
+          eventBeforeClass="calendar-card-start-resize-handle"
+          eventAfterClass="calendar-card-end-resize-handle"
           eventColor="var(--calendar-event-color)"
           editable={canEditDates}
           selectable={false}
           navLinks={false}
           eventStartEditable={canEditDates}
           eventDurationEditable={canEditDates}
-          eventResizableFromStart={false}
+          eventResizableFromStart={canEditDates}
           headerToolbar={false}
           dayMaxEvents
           nowIndicator

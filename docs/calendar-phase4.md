@@ -44,6 +44,29 @@ lokalisierten Date-/Time-Inputs und derselbe Inline-DatePicker verwendet. Speich
 Werte atomar, „Entfernen“ löscht beide Werte. Das Modal zeigt bei Zeiträumen getrennte Von-/Bis-Chips;
 der Erledigt-Status bleibt ausschließlich am Fälligkeits-/Bis-Wert.
 
+## Phase 4.1 – Date-Range UX Polish
+
+Phase 4.1 aktiviert Resize an beiden Grenzen eines Kalenderzeitraums. Der linke Handle schreibt
+ausschließlich `startDate`, der rechte ausschließlich `dueDate`; normales Drag verschiebt weiterhin
+beide Grenzen gemeinsam. Die bestehende Prüfung `startDate <= dueDate`, der optimistische
+Card-Update-Pfad, Realtime-Broadcast und Fehler-Rollback werden unverändert wiederverwendet.
+
+Auch Due-only-Events sind nun resizable. Ein Resize nach rechts übernimmt den bisherigen
+`dueDate`-Zeitpunkt als `startDate` und speichert den gezogenen Endpunkt als neues `dueDate`. Ein
+Resize nach links speichert den gezogenen Punkt als `startDate` und behält den bisherigen
+`dueDate`-Zeitpunkt als Ende. Die Umwandlung erfolgt mit einem atomaren Card-Update; bei einem
+API-Fehler stellt der Rollback ausdrücklich `startDate = null` und den ursprünglichen `dueDate`-Wert
+wieder her. Ein normales Drag eines Due-only-Events ändert weiterhin nur `dueDate`.
+
+Der Inline-DatePicker visualisiert vorhandene Zeiträume mit deutlich markiertem Von-/Bis-Tag und
+einer zusammenhängenden Hervorhebung der Tage dazwischen. Dafür werden ausschließlich die bereits
+vorhandenen PLANKA-/`react-datepicker`-Farben verwendet. Nach Aktivierung von „Von“ ist die
+Startauswahl aktiv; ein Datumsklick setzt den Start und wechselt bei geöffnetem Picker automatisch
+zur Bis-Auswahl. Ein Start hinter dem bisherigen Ende zieht das Ende mindestens auf den neuen Start
+nach. Ebenso wird eine Bis-Auswahl vor dem Start auf den Start begrenzt. Gleichzeitige Zeitpunkte
+bleiben gültig, und die manuelle Bearbeitung aller Date-/Time-Felder bleibt erhalten. Phase 4.1
+ergänzt weder Dependency noch Migration oder Datenbankänderung.
+
 ## FullCalendar-Mapping und Zeitsemantik
 
 Ein Due-only-Termin wird mit `start = dueDate`, ohne `end`, und `allDay = false` gemappt. Ein gültiger
@@ -67,9 +90,10 @@ bleiben read-only.
 - Drag eines Zeitraums schreibt Event-Start und Event-Ende gemeinsam nach `startDate` und `dueDate`.
 - Falls DayGrid einen Timed-Drag intern in einen All-day-Drop umwandelt, wird nur der lokale
   Kalendertag verschoben; die bisherigen lokalen Uhrzeiten bleiben auch über DST-Grenzen erhalten.
-- Resize ist nur für gültige Zeiträume aktiv und verändert am rechten Ende den `dueDate`.
-- Linkes Resize ist bewusst deaktiviert; Startänderungen erfolgen im Modal oder durch Verschieben
-  des gesamten Zeitraums.
+- Linkes Resize eines Zeitraums verändert ausschließlich `startDate`; rechtes Resize ausschließlich
+  `dueDate`.
+- Resize eines Due-only-Termins erzeugt atomar einen gültigen Zeitraum. Drag bleibt dagegen ein
+  Due-only-Update ohne `startDate`.
 
 Das UI aktualisiert optimistisch über den bestehenden Card-Action-Pfad. Der Calendar-Handler gibt
 dem Saga-Service die vorherigen Datumswerte und FullCalendars `revert()` mit. Bei einem API-Fehler
@@ -102,12 +126,19 @@ Die automatisierten Tests decken ab:
 - Client-API-Serialisierung und -Deserialisierung;
 - Due-only, gleich-/mehrtägige Ranges, ungültige Werte, Mitternacht und DST;
 - User-/Labelfilter, Suche, „Meine Aufgaben“, Archive/Trash und Fremd-Boards;
-- Drag eines Einzeltermins, Drag und End-Resize eines Zeitraums, Save-Aufruf und Fehler-Rollback;
-- bestehender Event-Klick/CardModal sowie ein Cucumber-Szenario für Range-Drag, Resize und Reload.
+- Drag eines Einzeltermins, Drag sowie Start-/End-Resize eines Zeitraums, Save-Aufruf und
+  Fehler-Rollback;
+- Due-only-Resize nach links und rechts, persistente Umwandlung zum Zeitraum und Rollback zum
+  ursprünglichen Due-only-Zustand;
+- Von-Auswahl mit automatischem Wechsel zu Bis, gleich-/mehrtägige Range-Markierung und Korrektur
+  ungültiger Reihenfolgen;
+- bestehender Event-Klick/CardModal sowie Cucumber-Szenarien für Range-Drag, beidseitiges Resize,
+  Due-only-Umwandlung und Reload.
 
 Der Cucumber-Dry-Run validiert die Struktur. Ein vollständiger Browserlauf benötigt eine laufende
 Testinstanz und zusätzlich zu `CALENDAR_BOARD_PATH`/`CALENDAR_CARD_TITLE` eine editierbare
-Range-Fixture über `CALENDAR_RANGE_CARD_TITLE`.
+Range-Fixture über `CALENDAR_RANGE_CARD_TITLE`. Der Due-only-Resize-/Reload-Fall verwendet zusätzlich
+`CALENDAR_DUE_ONLY_RESIZE_CARD_TITLE`.
 
 ## Lizenz, Dependencies und bekannte Grenzen
 
@@ -117,7 +148,6 @@ Premium-Plugins sind nicht enthalten. Workflow und GHCR-Ziel bleiben unveränder
 
 Bekannte Grenzen:
 
-- Resize ist nur am End-/rechten Rand aktiv.
 - Es gibt weiterhin keine date-only/Ganztagssemantik; alle Werte sind exakte Zeitpunkte.
 - Offline-Warteschlangen jenseits des vorhandenen PLANKA-Request-Verhaltens sind nicht Teil der
   Phase.
