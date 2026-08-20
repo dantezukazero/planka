@@ -41,10 +41,11 @@ describe('calendar event editing', () => {
     ]);
   });
 
-  test('moves a single due-date event', () => {
+  test('moves a single due-date event without persisting its synthetic end', () => {
     const dueDate = new Date('2026-08-21T12:00:00.000Z');
+    const syntheticEnd = new Date('2026-08-21T13:00:00.000Z');
 
-    const update = getCalendarEventUpdate(createEvent({ start: dueDate }));
+    const update = getCalendarEventUpdate(createEvent({ start: dueDate, end: syntheticEnd }));
 
     expect(update).toEqual({ dueDate });
     expect(update).not.toHaveProperty('startDate');

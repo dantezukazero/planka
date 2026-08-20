@@ -37,6 +37,10 @@ import {
 } from '../../../utils/calendar-preferences';
 import { loadFullCalendarLocale } from '../../../utils/fullcalendar-locales';
 import {
+  CALENDAR_VISUAL_DURATION_OPTIONS,
+  getCalendarEventTimeText,
+} from '../../../utils/calendar-event-display';
+import {
   applyCalendarEditingPermissions,
   getCalendarEventDropUpdate,
   getCalendarEventResizeRollbackUpdate,
@@ -188,29 +192,33 @@ const CalendarView = React.memo(() => {
     [saveEventChange],
   );
 
-  const renderEventContent = useCallback(({ event, timeText }) => {
-    const labels = event.extendedProps.labels || [];
+  const renderEventContent = useCallback(
+    ({ event, timeText }) => {
+      const labels = event.extendedProps.labels || [];
+      const visibleTimeText = getCalendarEventTimeText(event, timeText, language);
 
-    return (
-      <div className={styles.eventContent} title={event.title}>
-        {timeText && <span className={styles.eventTime}>{timeText}</span>}
-        {labels.length > 0 && (
-          <span className={styles.labelMarkers} aria-hidden="true">
-            {labels.map((label) => (
-              <span
-                key={label.id}
-                className={classNames(
-                  styles.labelMarker,
-                  globalStyles[`background${upperFirst(camelCase(label.color))}`],
-                )}
-              />
-            ))}
-          </span>
-        )}
-        <span className={styles.eventTitle}>{event.title}</span>
-      </div>
-    );
-  }, []);
+      return (
+        <div className={styles.eventContent} title={event.title}>
+          {visibleTimeText && <span className={styles.eventTime}>{visibleTimeText}</span>}
+          {labels.length > 0 && (
+            <span className={styles.labelMarkers} aria-hidden="true">
+              {labels.map((label) => (
+                <span
+                  key={label.id}
+                  className={classNames(
+                    styles.labelMarker,
+                    globalStyles[`background${upperFirst(camelCase(label.color))}`],
+                  )}
+                />
+              ))}
+            </span>
+          )}
+          <span className={styles.eventTitle}>{event.title}</span>
+        </div>
+      );
+    },
+    [language],
+  );
 
   const MonthPickerPopup = usePopup(MonthPickerStep, {
     position: 'bottom left',
@@ -294,6 +302,8 @@ const CalendarView = React.memo(() => {
           initialView={initialCalendarViewRef.current}
           locale={fullCalendarLocale}
           timeZone="local"
+          forceEventDuration={CALENDAR_VISUAL_DURATION_OPTIONS.forceEventDuration}
+          defaultTimedEventDuration={CALENDAR_VISUAL_DURATION_OPTIONS.defaultTimedEventDuration}
           allDayMaintainDuration
           events={editableEvents}
           eventOrder="start,title"

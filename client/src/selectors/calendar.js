@@ -28,6 +28,9 @@ const createCalendarEvent = (cardModel) => {
     ...(hasValidRange && {
       end: cardModel.dueDate,
     }),
+    ...(!hasValidRange && {
+      display: 'block',
+    }),
     allDay: false,
     extendedProps: {
       cardId: cardModel.id,

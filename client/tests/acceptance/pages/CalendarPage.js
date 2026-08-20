@@ -121,6 +121,10 @@ export default class CalendarPage {
     return this.getDueOnlyResizeCardEvent().locator('.calendar-card-end-resize-handle');
   }
 
+  getDueOnlyCardStartResizeHandle() {
+    return this.getDueOnlyResizeCardEvent().locator('.calendar-card-start-resize-handle');
+  }
+
   async dragRangeCardToNextDay() {
     const event = this.getRangeCardEvent();
     const dayCell = page.locator(`${this.calendarSelector} .fc-daygrid-day`).first();

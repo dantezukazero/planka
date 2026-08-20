@@ -82,6 +82,11 @@ Then('the configured due-only resize card should be visible in the calendar', as
   await expect(calendarPage.getDueOnlyResizeCardEvent()).toBeVisible();
 });
 
+Then('the configured due-only resize card should expose start and end resize handles', async () => {
+  await expect(calendarPage.getDueOnlyCardStartResizeHandle()).toBeAttached();
+  await expect(calendarPage.getDueOnlyCardEndResizeHandle()).toBeAttached();
+});
+
 Then('the configured range card should expose start and end resize handles', async () => {
   await expect(calendarPage.getRangeCardStartResizeHandle()).toBeAttached();
   await expect(calendarPage.getRangeCardEndResizeHandle()).toBeAttached();

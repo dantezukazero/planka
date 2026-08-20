@@ -55,6 +55,7 @@ Feature: Board calendar
     And the configured calendar board is open
     When the user selects the Calendar board view
     Then the configured due-only resize card should be visible in the calendar
+    And the configured due-only resize card should expose start and end resize handles
     When the user extends the configured due-only resize card by one day
     And the user reloads the board
     And the user opens the configured due-only resize card from the calendar

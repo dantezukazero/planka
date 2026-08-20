@@ -67,6 +67,28 @@ nach. Ebenso wird eine Bis-Auswahl vor dem Start auf den Start begrenzt. Gleichz
 bleiben gültig, und die manuelle Bearbeitung aller Date-/Time-Felder bleibt erhalten. Phase 4.1
 ergänzt weder Dependency noch Migration oder Datenbankänderung.
 
+## Phase 4.2 – Trello-artiges Resize für Due-only-Termine
+
+Phase 4.2 ergänzt für offene FullCalendar-Events eine ausschließlich visuelle Standarddauer. Der
+Kalender verwendet dafür die Community-Optionen `forceEventDuration` und
+`defaultTimedEventDuration="01:00"`. Der Calendar-Selector liefert bei Due-only-Karten weiterhin nur
+`start = dueDate` und ausdrücklich kein `end`; `Card.startDate` bleibt ohne Benutzerinteraktion
+`null`. FullCalendar erzeugt den einstündigen Endpunkt nur intern, damit in DayGrid und TimeGrid
+beide Resize-Handles nutzbar sind.
+
+Due-only-Events erhalten zusätzlich `display: 'block'` und erscheinen im Monatskalender als
+kompakter Balken statt als Punkt. Persistierte Zeiträume behalten ihr bisheriges Event-Mapping und
+ihre Darstellung. Drag ignoriert das synthetische Ende weiterhin und schreibt ausschließlich den
+verschobenen Start nach `dueDate`. Erst ein Resize wandelt die Karte mit einem atomaren Update in
+einen echten Zeitraum um: links bleibt der ursprüngliche Due-Zeitpunkt das Ende, rechts wird er zum
+Start. Validierung und Rollback entsprechen Phase 4.1.
+
+Die synthetische Stunde ist keine Card-, API- oder Redux-Eigenschaft. Insbesondere zeigt die eigene
+Event-Content-Darstellung für Due-only-Events in Agenda, Month und Week nur den tatsächlichen
+Fälligkeitszeitpunkt; ausschließlich echte Ranges verwenden FullCalendars Start-/End-Zeittext. Ein
+Reload ohne Resize rekonstruiert deshalb wieder dasselbe offene Due-only-Event. Phase 4.2 ändert
+weder Backend, Datenbank, Modell, Migrationen noch Dependencies.
+
 ## FullCalendar-Mapping und Zeitsemantik
 
 Ein Due-only-Termin wird mit `start = dueDate`, ohne `end`, und `allDay = false` gemappt. Ein gültiger
@@ -130,6 +152,8 @@ Die automatisierten Tests decken ab:
   Fehler-Rollback;
 - Due-only-Resize nach links und rechts, persistente Umwandlung zum Zeitraum und Rollback zum
   ursprünglichen Due-only-Zustand;
+- offene Due-only-Events ohne Selector-Ende, visuelle einstündige FullCalendar-Dauer,
+  DayGrid-Blockdarstellung und Agenda-Zeittext ohne künstliches Ende;
 - Von-Auswahl mit automatischem Wechsel zu Bis, gleich-/mehrtägige Range-Markierung und Korrektur
   ungültiger Reihenfolgen;
 - bestehender Event-Klick/CardModal sowie Cucumber-Szenarien für Range-Drag, beidseitiges Resize,

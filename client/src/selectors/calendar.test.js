@@ -162,6 +162,7 @@ describe('selectCalendarEventsForCurrentBoard', () => {
         id: 'card-1',
         title: 'Calendar card',
         start: dueDate,
+        display: 'block',
         allDay: false,
         extendedProps: {
           cardId: 'card-1',
@@ -203,6 +204,28 @@ describe('selectCalendarEventsForCurrentBoard', () => {
         extendedProps: expect.objectContaining({ isDateRange: true }),
       }),
     );
+    expect(selectCalendarEventsForCurrentBoard(state)[0]).not.toHaveProperty('display');
+  });
+
+  test('keeps a due-only card open-ended and block-rendered across a selector reload', () => {
+    const dueDate = new Date('2026-08-20T12:30:00.000Z');
+    const states = [
+      createState({ cards: [{ id: 'card-1', startDate: null, dueDate }] }),
+      createState({ cards: [{ id: 'card-1', startDate: null, dueDate }] }),
+    ];
+
+    states.forEach((state) => {
+      const event = selectCalendarEventsForCurrentBoard(state)[0];
+      expect(event).toEqual(
+        expect.objectContaining({
+          start: dueDate,
+          display: 'block',
+          extendedProps: expect.objectContaining({ isDateRange: false }),
+        }),
+      );
+      expect(event).not.toHaveProperty('end');
+      expect(orm.session(state.orm).Card.withId('card-1').startDate).toBeNull();
+    });
   });
 
   test('maps a same-day range without changing either timestamp', () => {
