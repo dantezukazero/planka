@@ -1,0 +1,78 @@
+/*!
+ * Copyright (c) 2026 PLANKA Software GmbH
+ * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
+ */
+
+:global(#app) {
+  .wrapper {
+    background: #f5f6f7;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    padding: 16px 20px 20px;
+    width: 100%;
+  }
+
+  .controls {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+
+  .calendar {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(9, 30, 66, 0.18);
+    flex: 1 1 auto;
+    min-height: 440px;
+    padding: 16px;
+    position: relative;
+
+    // FullCalendar v7 intentionally hashes internal classes. This class is injected through the
+    // public eventClass option and remains scoped below this component.
+    :global(.calendar-card-event) {
+      cursor: pointer;
+    }
+  }
+
+  .fullCalendar {
+    color: #172b4d;
+    font-family: inherit;
+    font-size: 14px;
+  }
+
+  .emptyState {
+    align-items: center;
+    color: #6b778c;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    text-align: center;
+    top: 52%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (max-width: 767px) {
+  :global(#app) {
+    .wrapper {
+      padding: 8px;
+    }
+
+    .calendar {
+      min-height: 360px;
+      overflow-x: auto;
+      padding: 8px;
+
+      .fullCalendar {
+        min-width: 560px;
+      }
+    }
+  }
+}

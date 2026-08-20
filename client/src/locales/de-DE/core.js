@@ -135,6 +135,7 @@ export default {
       canManageSystemWideSettingsAndActAsProjectOwner:
         'Kann systemweite Einstellungen vornehmen und als Projektleiter arbeiten.',
       canOnlyViewBoard: 'Kann das Board nur ansehen.',
+      calendar: 'Kalender',
       cardActions_title: 'Kartenaktionen',
       cardNotFound_title: 'Karte nicht gefunden',
       cardsOnThisListAreAvailableToAllBoardMembers:
@@ -318,6 +319,7 @@ export default {
       moveCard_title: 'Karte verschieben',
       moveList_title: 'Liste verschieben',
       myOwn_title: 'Meine eigenen',
+      myTasks: 'Meine Aufgaben',
       name: 'Name',
       newEmail: 'Neue E-Mail-Adresse',
       newPassword: 'Neues Passwort',
@@ -327,6 +329,8 @@ export default {
       noApiKeyCreated: 'Kein API-Schlüssel erstellt.',
       noBoards: 'Keine Arbeitsbereiche',
       noCardsFound: 'Keine Karten gefunden.',
+      noCardsMatchCurrentFilters: 'Keine Karten entsprechen den aktuellen Filtern.',
+      noCardsWithDueDate: 'Keine Karten mit einem Fälligkeitsdatum.',
       noConnectionToServer: 'Keine Verbindung zum Server',
       noLists: 'Keine Listen',
       noProjects: 'Keine Projekte',

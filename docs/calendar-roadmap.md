@@ -27,7 +27,12 @@ Kalenderabhängigkeit.
 - Frontend-, Daten-, API-, Realtime- und Testarchitektur aufgenommen.
 - Kalenderbibliotheken verglichen; FullCalendar Standard/Community v7 empfohlen.
 
-## Phase 2 – Board-lokaler Read-only Calendar MVP
+## Phase 2 – Board-lokaler Read-only Calendar MVP (implementiert am 20.08.2026)
+
+Status: Der board-lokale, read-only Month Calendar ist umgesetzt. Die Implementierung verwendet
+FullCalendar Standard/Community 7.0.2, bestehende Redux-ORM-/Socket-Daten, die vorhandenen
+Boardfilter und die bestehende Kartenroute. Details und Prüfnachweise stehen in
+[`calendar-phase2.md`](calendar-phase2.md).
 
 ### Umfang
 
@@ -45,24 +50,27 @@ Kalenderabhängigkeit.
 ### Technische Schritte
 
 1. Upstream neu fetch-en, SHA und Lizenzdateien erneut prüfen.
-2. FullCalendar Standard/Community v7 in einer separaten Dependency-Änderung installieren;
-   Lizenz/Lockfile und reale Bundle-Differenz reviewen.
-3. Isolierte Calendar-Komponenten, Event-Adapter und Redux-ORM-Selektoren anlegen.
-4. `BoardViews.CALENDAR` nur im Client ergänzen; serverseitiges `Board.defaultView` unverändert
-   lassen.
-5. View-Schalter, `Board.jsx` und vertikales Layout minimal ergänzen.
-6. PLANKA-i18n anbinden und FullCalendar auf Browser-Lokalzeit konfigurieren.
-7. Bestehende Kartenroute zum Öffnen des Modals wiederverwenden.
+2. FullCalendar Standard/Community v7 ist mit geprüftem Lockfile installiert. In v7 kommen
+   DayGrid und das Classic Theme als Deep Imports aus `@fullcalendar/react`; `@fullcalendar/core`
+   ist dessen transitive Abhängigkeit.
+3. Isolierte Calendar-Komponente und memoized Redux-ORM-Selektoren sind angelegt.
+4. `BoardViews.CALENDAR` ist nur im Client ergänzt; serverseitiges `Board.defaultView` bleibt
+   unverändert.
+5. View-Schalter, `Board.jsx` und vertikales Layout sind minimal ergänzt.
+6. PLANKA-i18n ist für Englisch/Deutsch angebunden; andere Sprachen fallen für Calendar-eigene
+   Texte auf Englisch zurück. FullCalendar verwendet Browser-Lokalzeit.
+7. Die bestehende Kartenroute öffnet per Event-Klick das vorhandene CardModal.
 
 ### Tests und Abnahmekriterien
 
-- Selector-Tests: keine Karten ohne `dueDate`; richtige Userfilter; keine fremden Boardkarten.
-- Zeitzonentests: UTC-ISO wird in Browser-Lokalzeit korrekt platziert; DST-Grenzen dokumentieren.
-- UI-/Acceptance-Test: Calendar öffnen, Monat wechseln, Eintrag anklicken, Modal schließen.
-- Viewer kann Kalender und Karten sehen, aber keine Editing-Funktion wird angeboten.
-- Client-Lint, Client-Tests und Production-Build grün.
-- Kein Backend-, Schema- oder Migrationsdiff.
-- Keine Premium-Abhängigkeit und keine Pro-/Enterprise-Quelle.
+- 14 Selector-Tests prüfen `dueDate`, IDs/Titel, Kartenmitgliedschaften, vorhandene User-/
+  Labelfilter, geschlossene Listen, Archive/Trash, Fremd-Boards, Memoisierung und Date-/DST-Werte.
+- Der Acceptance-Test ist implementiert und per Cucumber-Dry-Run strukturell validiert. Eine
+  vollständige Browserausführung benötigt eine laufende, konfigurierte Testinstanz.
+- Viewer erhalten keine Editing-Funktion; Calendar selbst ist strikt read-only konfiguriert.
+- Client-Lint, vollständige Client-Tests und Production-Build sind grün.
+- Es gibt keinen Backend-, Schema-, API- oder Migrationsdiff.
+- Es gibt keine Premium-Abhängigkeit und keine Pro-/Enterprise-Quelle.
 
 ### Bewusst nicht in Phase 2
 
@@ -87,7 +95,8 @@ Kalenderabhängigkeit.
 
 ### Entscheidungen vor Umsetzung
 
-- Festlegen, ob „Meine Aufgaben“ nur CardMemberships oder zusätzlich Task-Assignees umfasst.
+- Prüfen, ob „Meine Aufgaben“ in einer späteren Phase optional um Task-Assignees erweitert werden
+  soll. Phase 2 verwendet bewusst ausschließlich CardMemberships.
 - Prüfen, ob Kalenderansicht als `defaultView` persistierbar werden soll. Falls ja, erfordert das
   eine kleine, aber echte Server-Enum-/Validierungsänderung; eine DB-Migration ist für das bereits
   textuelle Feld voraussichtlich nicht nötig, muss aber separat geprüft werden.

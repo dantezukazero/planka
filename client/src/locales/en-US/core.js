@@ -117,6 +117,7 @@ export default {
       canManageSystemWideSettingsAndActAsProjectOwner:
         'Can manage the system wide settings and act as project owner.',
       canOnlyViewBoard: 'Can only view the board.',
+      calendar: 'Calendar',
       cardActions_title: 'Card Actions',
       cardNotFound_title: 'Card Not Found',
       cardsOnThisListAreAvailableToAllBoardMembers:
@@ -296,6 +297,7 @@ export default {
       moveCard_title: 'Move Card',
       moveList_title: 'Move List',
       myOwn_title: 'My Own',
+      myTasks: 'My tasks',
       name: 'Name',
       newEmail: 'New e-mail',
       newPassword: 'New password',
@@ -305,6 +307,8 @@ export default {
       noApiKeyCreated: 'No API key created.',
       noBoards: 'No boards',
       noCardsFound: 'No cards found.',
+      noCardsMatchCurrentFilters: 'No cards match the current filters.',
+      noCardsWithDueDate: 'No cards with a due date.',
       noConnectionToServer: 'No connection to server',
       noLists: 'No lists',
       noProjects: 'No projects',

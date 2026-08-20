@@ -5,6 +5,7 @@
 
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { Icon } from 'semantic-ui-react';
 import { usePopup } from '../../../../lib/popup';
 
@@ -20,6 +21,7 @@ const RightSide = React.memo(() => {
   const board = useSelector(selectors.selectCurrentBoard);
 
   const dispatch = useDispatch();
+  const [t] = useTranslation();
 
   const handleSelectViewClick = useCallback(
     ({ currentTarget: { value: view } }) => {
@@ -33,6 +35,7 @@ const RightSide = React.memo(() => {
   const views = [BoardViews.GRID, BoardViews.LIST];
   if (board.context === BoardContexts.BOARD) {
     views.unshift(BoardViews.KANBAN);
+    views.push(BoardViews.CALENDAR);
   }
 
   return (
@@ -45,6 +48,8 @@ const RightSide = React.memo(() => {
               type="button"
               value={view}
               disabled={view === board.view}
+              title={t(`common.${view}`)}
+              aria-label={t(`common.${view}`)}
               className={styles.button}
               onClick={handleSelectViewClick}
             >
