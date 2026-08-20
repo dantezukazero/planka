@@ -8,6 +8,16 @@ export const CALENDAR_VISUAL_DURATION_OPTIONS = Object.freeze({
   defaultTimedEventDuration: '01:00',
 });
 
+export const getCalendarEventClassName = ({ event, isDragging, isResizing, isSelected }) =>
+  [
+    'calendar-card-event',
+    event.extendedProps.isDateRange ? 'calendar-card-range-event' : 'calendar-card-due-only-event',
+    (isDragging || isResizing) && 'calendar-card-interacting',
+    isSelected && 'calendar-card-selected',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
 const isValidDate = (value) => value instanceof Date && !Number.isNaN(value.getTime());
 
 export const getCalendarEventTimeText = (event, fullCalendarTimeText, language) => {

@@ -13,13 +13,15 @@
     --calendar-control-hover: #f2f3f5;
     --calendar-control-border: rgba(9, 30, 66, 0.2);
     --calendar-focus: #2185d0;
-    --calendar-event-color: #2185d0;
+    --calendar-event-background: rgba(9, 30, 66, 0.04);
+    --calendar-event-text: var(--calendar-text);
     --fc-classic-background: var(--calendar-panel-background);
     --fc-classic-foreground: var(--calendar-text);
     --fc-classic-muted-foreground: var(--calendar-muted-text);
     --fc-classic-border: rgba(9, 30, 66, 0.13);
-    --fc-classic-primary: var(--calendar-event-color);
-    --fc-classic-event: var(--calendar-event-color);
+    --fc-classic-primary: var(--calendar-focus);
+    --fc-classic-event: var(--calendar-event-background);
+    --fc-classic-event-contrast: var(--calendar-event-text);
 
     display: flex;
     flex: 1 1 auto;
@@ -40,14 +42,6 @@
     padding: 14px;
     position: relative;
 
-    :global(.calendar-card-event) {
-      cursor: pointer;
-
-      &:focus-visible {
-        box-shadow: 0 0 0 3px rgba(33, 133, 208, 0.35);
-        outline: none;
-      }
-    }
   }
 
   .emptyState {
@@ -64,47 +58,10 @@
     transform: translate(-50%, -50%);
   }
 
-  .eventContent {
-    align-items: center;
-    display: flex;
-    gap: 4px;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .eventTime {
-    flex: 0 0 auto;
-    font-variant-numeric: tabular-nums;
-    font-weight: bold;
-  }
-
-  .eventTitle {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .fullCalendar {
     color: var(--calendar-text);
     font-family: inherit;
     font-size: 14px;
-  }
-
-  .labelMarker {
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(9, 30, 66, 0.12);
-    display: block;
-    flex: 0 0 auto;
-    height: 7px;
-    width: 7px;
-  }
-
-  .labelMarkers {
-    display: inline-flex;
-    flex: 0 0 auto;
-    gap: 2px;
   }
 
   .navigation {
@@ -238,6 +195,161 @@
 
   .viewSelectLabel {
     position: relative;
+  }
+}
+
+.eventContent {
+  align-items: center;
+  color: var(--calendar-event-text, #172b4d);
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.eventTime {
+  color: var(--calendar-event-text, #172b4d);
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+}
+
+.eventTitle {
+  color: var(--calendar-event-text, #172b4d);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.labelMarker {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(9, 30, 66, 0.2);
+  display: block;
+  flex: 0 0 auto;
+  height: 7px;
+  width: 7px;
+}
+
+.labelMarkers {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.morePopover {
+  --calendar-event-text: #172b4d;
+
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(9, 30, 66, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 8px 16px -4px rgba(9, 30, 66, 0.25),
+    0 0 0 1px rgba(9, 30, 66, 0.08);
+  color: var(--calendar-event-text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  min-width: 220px;
+
+  > div:has(.morePopoverClose) {
+    background: rgba(9, 30, 66, 0.08);
+    border-color: rgba(9, 30, 66, 0.13);
+    color: var(--calendar-event-text);
+  }
+
+  [id$="-title"] {
+    color: var(--calendar-event-text);
+    font-weight: bold;
+  }
+}
+
+.morePopoverClose {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  color: #172b4d;
+  justify-content: center;
+  margin: 2px;
+  padding: 4px;
+
+  &:hover {
+    background: rgba(9, 30, 66, 0.08);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(33, 133, 208, 0.32);
+    outline: none;
+  }
+}
+
+:global(.calendar-card-event) {
+  --calendar-event-background: rgba(9, 30, 66, 0.04);
+  --calendar-event-border: rgba(9, 30, 66, 0.13);
+  --calendar-event-hover: rgba(9, 30, 66, 0.08);
+  --calendar-event-text: #172b4d;
+
+  background-color: var(--calendar-event-background);
+  border-color: var(--calendar-event-border);
+  color: var(--calendar-event-text);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease,
+    opacity 120ms ease;
+
+  &:hover {
+    background-color: var(--calendar-event-hover);
+    border-color: rgba(9, 30, 66, 0.25);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba(33, 133, 208, 0.35);
+    outline: none;
+  }
+}
+
+:global(.calendar-card-range-event) {
+  --calendar-event-background: rgba(9, 30, 66, 0.08);
+  --calendar-event-border: rgba(9, 30, 66, 0.2);
+  --calendar-event-hover: rgba(9, 30, 66, 0.13);
+}
+
+:global(.calendar-card-interacting),
+:global(.calendar-card-selected) {
+  border-color: #2185d0;
+  box-shadow: 0 0 0 2px rgba(33, 133, 208, 0.28);
+  opacity: 0.9;
+}
+
+:global(.calendar-card-start-resize-handle),
+:global(.calendar-card-end-resize-handle) {
+  background: #2185d0;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+:global(.calendar-card-event:hover .calendar-card-start-resize-handle),
+:global(.calendar-card-event:hover .calendar-card-end-resize-handle),
+:global(.calendar-card-selected .calendar-card-start-resize-handle),
+:global(.calendar-card-selected .calendar-card-end-resize-handle) {
+  opacity: 0.55;
+}
+
+:global(.calendar-more-link) {
+  background: rgba(9, 30, 66, 0.04);
+  border-radius: 3px;
+  color: #172b4d;
+  font-weight: bold;
+  padding: 1px 4px;
+
+  &:hover {
+    background: rgba(9, 30, 66, 0.08);
+    color: #172b4d;
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(33, 133, 208, 0.32);
+    outline: none;
   }
 }
 

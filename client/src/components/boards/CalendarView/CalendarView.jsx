@@ -38,6 +38,7 @@ import {
 import { loadFullCalendarLocale } from '../../../utils/fullcalendar-locales';
 import {
   CALENDAR_VISUAL_DURATION_OPTIONS,
+  getCalendarEventClassName,
   getCalendarEventTimeText,
 } from '../../../utils/calendar-event-display';
 import {
@@ -307,10 +308,14 @@ const CalendarView = React.memo(() => {
           allDayMaintainDuration
           events={editableEvents}
           eventOrder="start,title"
-          eventClass="calendar-card-event"
+          eventClass={getCalendarEventClassName}
           eventBeforeClass="calendar-card-start-resize-handle"
           eventAfterClass="calendar-card-end-resize-handle"
-          eventColor="var(--calendar-event-color)"
+          eventColor="var(--calendar-event-background)"
+          eventContrastColor="var(--calendar-event-text)"
+          moreLinkClass="calendar-more-link"
+          popoverClass={styles.morePopover}
+          popoverCloseClass={styles.morePopoverClose}
           editable={canEditDates}
           selectable={false}
           navLinks={false}

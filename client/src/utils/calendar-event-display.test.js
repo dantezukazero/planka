@@ -1,5 +1,6 @@
 import {
   CALENDAR_VISUAL_DURATION_OPTIONS,
+  getCalendarEventClassName,
   getCalendarEventTimeText,
 } from './calendar-event-display';
 
@@ -33,5 +34,27 @@ describe('calendar event display', () => {
     };
 
     expect(getCalendarEventTimeText(event, '15:09 - 16:09', 'de-DE')).toBe('15:09 - 16:09');
+  });
+
+  test('assigns stable visual classes for due-only and range interactions', () => {
+    expect(
+      getCalendarEventClassName({
+        event: { extendedProps: { isDateRange: false } },
+        isDragging: false,
+        isResizing: false,
+        isSelected: false,
+      }),
+    ).toBe('calendar-card-event calendar-card-due-only-event');
+
+    expect(
+      getCalendarEventClassName({
+        event: { extendedProps: { isDateRange: true } },
+        isDragging: false,
+        isResizing: true,
+        isSelected: true,
+      }),
+    ).toBe(
+      'calendar-card-event calendar-card-range-event calendar-card-interacting calendar-card-selected',
+    );
   });
 });

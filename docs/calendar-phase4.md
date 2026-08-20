@@ -89,6 +89,22 @@ Fälligkeitszeitpunkt; ausschließlich echte Ranges verwenden FullCalendars Star
 Reload ohne Resize rekonstruiert deshalb wieder dasselbe offene Due-only-Event. Phase 4.2 ändert
 weder Backend, Datenbank, Modell, Migrationen noch Dependencies.
 
+## Phase 4.3 – Calendar Visual Polish
+
+Phase 4.3 stellt den dezenten PLANKA-Look für die in Phase 4.2 resizebaren Block-Events wieder her.
+Due-only-Termine verwenden eine sehr leichte vorhandene Navy-Transparenz, echte Von/Bis-Zeiträume
+eine etwas deutlichere Variante. Titel und Uhrzeit bleiben dunkel und kontrastreich; die vorhandenen
+Label-Farbmarker werden nicht überfärbt. Hover, Tastaturfokus, Auswahl, Drag und Resize verwenden
+weiterhin den bestehenden blauen Fokusakzent, ohne normale Termine vollflächig blau darzustellen.
+
+FullCalendars DayGrid-More-Popover wird als Portal unter `body` gerendert. Deshalb besitzen Popover,
+Close-Button und „+ weitere“-Link nun CalendarView-spezifische Klassen. Die Event-Content-, Zeit-,
+Titel- und Labelklassen sind als lokale CSS-Module-Klassen nicht mehr von einem `#app`-Descendant
+abhängig und funktionieren damit sowohl im normalen Kalender als auch im Portal. Hintergrund,
+Header, Datumstitel, Close-Button und Eventtexte verwenden die bereits vorhandenen PLANKA-Flächen-,
+Text-, Border- und Fokusfarben. Phase 4.3 ändert keinerlei Datums-, Persistenz- oder Filterlogik und
+ergänzt weder Backend-, Datenbank-, Modell-, Migrations- noch Dependency-Änderungen.
+
 ## FullCalendar-Mapping und Zeitsemantik
 
 Ein Due-only-Termin wird mit `start = dueDate`, ohne `end`, und `allDay = false` gemappt. Ein gültiger
