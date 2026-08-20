@@ -37,11 +37,27 @@
     border: 1px solid var(--calendar-panel-border);
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(9, 30, 66, 0.18);
+    display: flex;
     flex: 1 1 auto;
+    flex-direction: column;
     min-height: 440px;
+    overflow: hidden;
+    overscroll-behavior: contain;
     padding: 14px;
     position: relative;
 
+    &[data-calendar-view='dayGridMonth'] {
+      :global(.calendar-month-week) {
+        flex-grow: 0;
+        flex-shrink: 0;
+        min-height: clamp(132px, 17vh, 160px);
+        transition: min-height 160ms ease;
+      }
+
+      :global(.calendar-month-week[data-calendar-expanded-week='true']) {
+        min-height: max(clamp(132px, 17vh, 160px), var(--calendar-expanded-week-min-height));
+      }
+    }
   }
 
   .emptyState {
@@ -60,8 +76,10 @@
 
   .fullCalendar {
     color: var(--calendar-text);
+    flex: 1 1 auto;
     font-family: inherit;
     font-size: 14px;
+    min-height: 0;
   }
 
   .navigation {
@@ -377,6 +395,16 @@
       min-height: 380px;
       overflow-x: auto;
       padding: 6px;
+
+      &[data-calendar-view='dayGridMonth'] {
+        :global(.calendar-month-week) {
+          min-height: clamp(96px, 14vh, 124px);
+        }
+
+        :global(.calendar-month-week[data-calendar-expanded-week='true']) {
+          min-height: max(clamp(96px, 14vh, 124px), var(--calendar-expanded-week-min-height));
+        }
+      }
     }
 
     .fullCalendar {

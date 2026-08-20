@@ -9,6 +9,10 @@ Given('the configured calendar board is open', async () => {
   await calendarPage.navigate();
 });
 
+Given('the configured crowded calendar board is open', async () => {
+  await calendarPage.navigateToCrowdedBoard();
+});
+
 When('the user selects the Calendar board view', async () => {
   await calendarPage.selectCalendarView();
 });
@@ -39,6 +43,18 @@ When('the user extends the configured due-only resize card by one day', async ()
 
 When('the user opens the configured due-only resize card from the calendar', async () => {
   await calendarPage.getDueOnlyResizeCardEvent().click();
+});
+
+When('the user expands the crowded calendar week', async () => {
+  await calendarPage.expandCrowdedWeek();
+});
+
+When('the user drags the configured hidden calendar card to the next day', async () => {
+  await calendarPage.dragCrowdedCardToNextDay();
+});
+
+When('the user navigates to the next calendar month', async () => {
+  await calendarPage.navigateToNextMonth();
 });
 
 When('the user selects the Week calendar view', async () => {
@@ -85,6 +101,30 @@ Then('the configured due-only resize card should be visible in the calendar', as
 Then('the configured due-only resize card should expose start and end resize handles', async () => {
   await expect(calendarPage.getDueOnlyCardStartResizeHandle()).toBeAttached();
   await expect(calendarPage.getDueOnlyCardEndResizeHandle()).toBeAttached();
+});
+
+Then('a calendar More-link should be visible', async () => {
+  await expect(calendarPage.getMoreLink()).toBeVisible();
+});
+
+Then('no calendar More-popover should be visible', async () => {
+  await expect(calendarPage.getMorePopover()).toHaveCount(0);
+});
+
+Then('only the crowded calendar week should be expanded', async () => {
+  await expect(calendarPage.getExpandedMonthWeeks()).toHaveCount(1);
+});
+
+Then('the configured hidden calendar card should be visible in the month grid', async () => {
+  await expect(calendarPage.getCrowdedCardEvent()).toBeVisible();
+});
+
+Then('the calendar card move should be saved', async () => {
+  await expect(calendarPage.getCrowdedCardEvent()).toBeVisible();
+});
+
+Then('the Month calendar should start with no expanded weeks', async () => {
+  await expect(calendarPage.getExpandedMonthWeeks()).toHaveCount(0);
 });
 
 Then('the configured range card should expose start and end resize handles', async () => {

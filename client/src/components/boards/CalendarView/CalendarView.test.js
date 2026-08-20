@@ -22,6 +22,36 @@ describe('CalendarView visual class contract', () => {
     expect(stylesheetSource).toContain('.morePopoverClose {');
   });
 
+  test('expands only a handled Month row and refreshes FullCalendar hit zones', () => {
+    expect(componentSource).toContain('const [expandedMonthWeeks, setExpandedMonthWeeks]');
+    expect(componentSource).toContain('moreLinkClick={handleMoreLinkClick}');
+    expect(componentSource).toContain('moreLinkDidMount={handleMoreLinkDidMount}');
+    expect(componentSource).toContain('dayCellDidMount={handleDayCellDidMount}');
+    expect(componentSource).toContain('dayCellWillUnmount={handleDayCellWillUnmount}');
+    expect(componentSource).toContain('if (info.view.type !== CalendarViews.MONTH)');
+    expect(componentSource).toContain("return 'popover';");
+    expect(componentSource).toContain('return true;');
+    expect(componentSource).toContain('calendarApi.updateSize();');
+    expect(componentSource).toContain('setExpandedMonthWeeks(resetExpandedMonthWeeks);');
+  });
+
+  test('keeps the toolbar outside a responsive, internally scrolling Month grid', () => {
+    expect(componentSource.indexOf('data-testid="calendar-toolbar"')).toBeLessThan(
+      componentSource.indexOf('data-calendar-view={calendarView}'),
+    );
+    expect(componentSource).toContain('height="100%"');
+    expect(componentSource).toContain('stickyHeaderDates');
+    expect(stylesheetSource).toContain("&[data-calendar-view='dayGridMonth']");
+    expect(stylesheetSource).toContain(':global(.calendar-month-week)');
+    expect(stylesheetSource).toContain(
+      ":global(.calendar-month-week[data-calendar-expanded-week='true'])",
+    );
+    expect(stylesheetSource).toContain('min-height: clamp(132px, 17vh, 160px);');
+    expect(stylesheetSource).toContain('min-height: clamp(96px, 14vh, 124px);');
+    expect(stylesheetSource).toContain('overflow: hidden;');
+    expect(stylesheetSource).toContain('overscroll-behavior: contain;');
+  });
+
   test('keeps readable custom event content outside the app descendant scope for portals', () => {
     expect(stylesheetSource).toMatch(/\n\.eventContent \{/);
     expect(stylesheetSource).toMatch(/\n\.eventTime \{/);

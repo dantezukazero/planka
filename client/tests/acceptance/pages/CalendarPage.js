@@ -6,6 +6,8 @@ export default class CalendarPage {
     this.cardTitle = process.env.CALENDAR_CARD_TITLE;
     this.rangeCardTitle = process.env.CALENDAR_RANGE_CARD_TITLE;
     this.dueOnlyResizeCardTitle = process.env.CALENDAR_DUE_ONLY_RESIZE_CARD_TITLE;
+    this.crowdedBoardPath = process.env.CALENDAR_CROWDED_BOARD_PATH || this.boardPath;
+    this.crowdedCardTitle = process.env.CALENDAR_CROWDED_CARD_TITLE;
 
     this.calendarSelector = '[data-testid="calendar-view"]';
     this.calendarViewButtonSelector =
@@ -41,9 +43,22 @@ export default class CalendarPage {
     }
   }
 
+  assertCrowdedCalendarConfigured() {
+    if (!this.crowdedBoardPath || !this.crowdedCardTitle) {
+      throw new Error(
+        'CALENDAR_CROWDED_BOARD_PATH (or CALENDAR_BOARD_PATH) and CALENDAR_CROWDED_CARD_TITLE must identify a crowded editable Month fixture',
+      );
+    }
+  }
+
   async navigate() {
     this.assertConfigured();
     await page.goto(new URL(this.boardPath, Config.BASE_URL).toString());
+  }
+
+  async navigateToCrowdedBoard() {
+    this.assertCrowdedCalendarConfigured();
+    await page.goto(new URL(this.crowdedBoardPath, Config.BASE_URL).toString());
   }
 
   async selectCalendarView() {
@@ -107,6 +122,68 @@ export default class CalendarPage {
     return page.locator(`${this.calendarSelector} .calendar-card-event`, {
       hasText: this.dueOnlyResizeCardTitle,
     });
+  }
+
+  getMoreLink() {
+    return page.locator(`${this.calendarSelector} .calendar-more-link`).first();
+  }
+
+  getMorePopover() {
+    return page.locator('[role="dialog"][id*="popover-"]');
+  }
+
+  getExpandedMonthWeeks() {
+    return page.locator(
+      `${this.calendarSelector} .calendar-month-week[data-calendar-expanded-week="true"]`,
+    );
+  }
+
+  getCrowdedCardEvent() {
+    this.assertCrowdedCalendarConfigured();
+    return page.locator(`${this.calendarSelector} .calendar-card-event`, {
+      hasText: this.crowdedCardTitle,
+    });
+  }
+
+  async expandCrowdedWeek() {
+    await this.getMoreLink().click();
+    await this.getExpandedMonthWeeks().waitFor({ state: 'attached' });
+  }
+
+  async dragCrowdedCardToNextDay() {
+    const event = this.getCrowdedCardEvent();
+    const expandedWeek = this.getExpandedMonthWeeks();
+    const dayCell = expandedWeek.locator('.calendar-month-day-cell').first();
+    const [eventBox, dayCellBox] = await Promise.all([event.boundingBox(), dayCell.boundingBox()]);
+
+    if (!eventBox || !dayCellBox) {
+      throw new Error(
+        'The crowded event or expanded calendar day cell has no visible bounding box',
+      );
+    }
+
+    const updateResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PATCH' &&
+        new URL(response.url()).pathname.startsWith('/api/cards/') &&
+        response.ok(),
+    );
+
+    await page.mouse.move(eventBox.x + eventBox.width / 2, eventBox.y + eventBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      eventBox.x + eventBox.width / 2 + dayCellBox.width,
+      eventBox.y + eventBox.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await updateResponse;
+    await event.waitFor({ state: 'visible' });
+  }
+
+  async navigateToNextMonth() {
+    await page.locator(`${this.calendarSelector} button[value="next"]`).click();
+    await page.locator(`${this.calendarSelector} [data-calendar-view="dayGridMonth"]`).waitFor();
   }
 
   getRangeCardStartResizeHandle() {

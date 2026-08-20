@@ -105,6 +105,41 @@ Header, Datumstitel, Close-Button und Eventtexte verwenden die bereits vorhanden
 Text-, Border- und Fokusfarben. Phase 4.3 ändert keinerlei Datums-, Persistenz- oder Filterlogik und
 ergänzt weder Backend-, Datenbank-, Modell-, Migrations- noch Dependency-Änderungen.
 
+## Phase 4.4 – Expandable Month Rows
+
+Die Monatsansicht verwendet auf Desktop responsive Wochen-Mindesthöhen von ungefähr 132 bis 160
+Pixeln; auf kleinen Displays bleiben die Zeilen mit ungefähr 96 bis 124 Pixeln kompakter. Der
+FullCalendar füllt weiterhin den vorhandenen Boardbereich. Seine eigene vertikale Scroller-Mechanik
+nimmt höhere Monatszeilen auf, während die PLANKA-Toolbar außerhalb sichtbar bleibt und
+`stickyHeaderDates` den Wochentagskopf über die offizielle v7-Option stabil hält. Der vorhandene
+horizontale Mobile-Fallback bleibt erhalten.
+
+Ein Klick auf „+ weitere“ öffnet in `dayGridMonth` kein Popover mehr. Der `moreLinkClick`-Callback
+ermittelt die betroffene Woche und die Anzahl ihrer ausgeblendeten Segmente. React-State speichert
+nur diese Woche und ihre erforderliche Mindesthöhe; weitere Wochen bleiben kollabiert und können
+unabhängig ergänzt werden. Nach der Row-Erweiterung ruft der Kalender offiziell `updateSize()` auf,
+damit Eventpositionen sowie Drag- und Resize-Hit-Zones aus FullCalendars Layout neu berechnet werden.
+Die zuvor versteckten Due-only- und Range-Events erscheinen dadurch direkt im Monatsraster.
+
+Navigation zu einem anderen Monat, Monatsauswahl sowie Wechsel zu Week oder Agenda leeren den
+Expansion-State. Boardwechsel, Verlassen der Calendar View und Reload setzen ihn durch das
+Unmounten ebenfalls zurück. Week behält sein bisheriges More-Popover; deshalb bleiben die
+Popover-Styles aus Phase 4.3 in Verwendung. Ein eigener Collapse-Link wurde bewusst nicht ergänzt:
+die robuste per-Row-Expansion hat Vorrang und wird spätestens durch die genannten Navigationen
+zurückgesetzt.
+
+FullCalendar v7 bietet keine öffentliche per-Row-Variante von `dayMaxEvents`. Die schmale
+DOM-Integration nutzt deshalb ausschließlich die dokumentierten DayCell-/MoreLink-Hooks, markiert
+die zugehörige zugängliche Grid-Row innerhalb des CalendarView-Containers und räumt Attribute sowie
+CSS-Property im Effect-Cleanup wieder auf. Es gibt keine globale Dokumentabfrage und keine manuelle
+Drag-Koordinatenberechnung. Phase 4.4 ändert weder Datums-/Persistenzlogik noch Backend, Datenbank,
+Modell, Migrationen, API, Realtime, Permissions oder Dependencies.
+
+Für die lokale Abnahme stand in der Ausführungsumgebung keine verbundene Browser-Sitzung zur
+Verfügung; ein reproduzierbarer Pixel-/Interaktionstest war deshalb nicht möglich. Die Expansion
+ist stattdessen durch Unit-Tests der Höhen-/State-Logik, CalendarView-DOM-/Callback-Verträge, das
+Acceptance-Szenario und den Production Build abgesichert.
+
 ## FullCalendar-Mapping und Zeitsemantik
 
 Ein Due-only-Termin wird mit `start = dueDate`, ohne `end`, und `allDay = false` gemappt. Ein gültiger

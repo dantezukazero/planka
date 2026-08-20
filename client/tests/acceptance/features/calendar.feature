@@ -60,3 +60,17 @@ Feature: Board calendar
     And the user reloads the board
     And the user opens the configured due-only resize card from the calendar
     Then the open card should show a date range
+
+  Scenario: Expand only a crowded month week instead of opening a popover
+    Given the user is logged in with email or username "demo" and password "demo"
+    And the configured crowded calendar board is open
+    When the user selects the Calendar board view
+    Then a calendar More-link should be visible
+    When the user expands the crowded calendar week
+    Then no calendar More-popover should be visible
+    And only the crowded calendar week should be expanded
+    And the configured hidden calendar card should be visible in the month grid
+    When the user drags the configured hidden calendar card to the next day
+    Then the calendar card move should be saved
+    When the user navigates to the next calendar month
+    Then the Month calendar should start with no expanded weeks
