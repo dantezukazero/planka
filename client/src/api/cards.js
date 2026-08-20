@@ -14,6 +14,9 @@ import { transformNotification } from './notifications';
 
 export const transformCard = (card) => ({
   ...card,
+  ...(card.startDate && {
+    startDate: new Date(card.startDate),
+  }),
   ...(card.dueDate && {
     dueDate: new Date(card.dueDate),
   }),
@@ -35,6 +38,9 @@ export const transformCard = (card) => ({
 
 export const transformCardData = (data) => ({
   ...data,
+  ...(data.startDate && {
+    startDate: data.startDate.toISOString(),
+  }),
   ...(data.dueDate && {
     dueDate: data.dueDate.toISOString(),
   }),

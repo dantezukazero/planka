@@ -111,33 +111,40 @@ oder Dependency-Änderungen vorgenommen. Details und Prüfnachweise stehen in
 - Cucumber-Acceptance für Month/Week/Agenda/CardModal und persistiert ausgeblendete Views.
 - Client-Lint, vollständige Tests, Production-Build, Audit und Dependency-/Backend-Guards.
 
-## Phase 4 – Editing
+## Phase 4 – Date Ranges und Editing (implementiert am 20.08.2026)
+
+Status: Das Card-Modell besitzt nun optional `startDate`/`start_date`; `dueDate` bleibt Ende und
+Fälligkeit. Das CardModal bearbeitet Von/Bis, und gültige Zeiträume erscheinen in Month, Week und
+Agenda. Board-Editoren können Events verschieben und am Ende verlängern oder verkürzen. Details und
+Prüfnachweise stehen in [`calendar-phase4.md`](calendar-phase4.md).
 
 ### Umfang
 
-- Drag & Drop eines Events ändert `Card.dueDate` über den bestehenden
-  `PATCH /api/cards/:id`-Pfad.
-- Editor-/Managerberechtigungen berücksichtigen; Viewer bleibt read-only.
-- Optimistisches Update mit sauberem Rollback bei API-Fehler.
-- Socket-Updates anderer Clients ohne Duplikate oder Sprünge übernehmen.
-- Optional direkte Datum-/Zeiteingabe aus dem Kalender, möglichst durch Wiederverwendung der
-  bestehenden Due-Date-UI.
+- Nullable PostgreSQL-/Sails-/Redux-ORM-Feld `startDate` mit Migration und API-Unterstützung.
+- Serverseitige Validierung von `startDate <= dueDate`; kein persistierter Start ohne Ende.
+- Erweiterter Due-Date-Popup und Von-/Bis-Anzeige im vorhandenen CardModal.
+- Exaktes Timed-Event-Mapping für Due-only und gleich-/mehrtägige Zeiträume.
+- Drag & Drop für Einzeltermine und Zeiträume; End-Resize für Zeiträume.
+- Optimistisches Update mit Redux-ORM- und FullCalendar-Rollback bei Save-Fehlern.
+- Bestehender Socket-/Realtime-Pfad, Filter, „Meine Aufgaben“, Labels und Kartenroute.
+- Trello-JSON-Import von `card.start`, mit unverändertem `due`-/`dueComplete`-Verhalten.
 
-### Sicherheits- und Datenregeln
+### Entscheidungen und Grenzen
 
-- Lokale Calendar-Zeit in einen nativen `Date`-Wert überführen; die bestehende API serialisiert
-  anschließend mit `toISOString()`.
-- Beim Verschieben in der Month View die bisherige Uhrzeit erhalten, sofern das Produktkonzept
-  nicht ausdrücklich etwas anderes festlegt.
-- DST-Wechsel und ungültige/lokale Zeiten testen.
-- Keine neue Mutation-API und keine DB-Migration ohne nachgewiesenen Bedarf.
+- FullCalendars freies Interaction-Plugin kommt als Deep Import aus der vorhandenen Dependency;
+  keine neue oder Premium-Abhängigkeit.
+- `allDay = false` erhält PLANKAs bestehende lokale Zeitsemantik. Das Event-Ende wird nicht um einen
+  Tag verändert.
+- Resize am linken Rand bleibt deaktiviert; nur der Endwert wird resized.
+- Viewer bleiben read-only. Archive-/Trash-Karten bleiben außerhalb des Board-Kalenders.
 
 ### Tests
 
-- Drag auf anderen Tag und andere Woche.
-- Uhrzeiterhalt, DST, API-Fehler/Rollback.
-- Viewerrechte und gelöschte/verschobene Karte während eines Drags.
-- Realtime-Update aus zweitem Browserkontext.
+- Migration, Model/API-Vertrag, Create-/Update-Validierung und Entfernen des Startwerts.
+- Trello Range/Due-only/ohne Datum, `dueComplete` und ISO-Zeitzonenwerte.
+- Selector-/API-/Interaction-Tests einschließlich Mitternacht, DST, Filter und Rollback.
+- Cucumber-Acceptance für Month/Week/Agenda/CardModal sowie Range-Drag/Resize/Reload; der echte
+  Browserlauf benötigt eine konfigurierte lokale PLANKA-Fixture.
 
 ## Spätere optionale Phase – Projekt-/globaler Kalender
 

@@ -30,8 +30,8 @@ export default function* cardsWatchers() {
     takeEvery(EntryActionTypes.CARD_CREATE_HANDLE, ({ payload: { card } }) =>
       services.handleCardCreate(card),
     ),
-    takeEvery(EntryActionTypes.CARD_UPDATE, ({ payload: { id, data } }) =>
-      services.updateCard(id, data),
+    takeEvery(EntryActionTypes.CARD_UPDATE, ({ payload: { id, data, options } }) =>
+      services.updateCard(id, data, options),
     ),
     takeEvery(EntryActionTypes.CURRENT_CARD_UPDATE, ({ payload: { data } }) =>
       services.updateCurrentCard(data),

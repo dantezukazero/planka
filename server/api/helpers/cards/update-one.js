@@ -3,6 +3,11 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+const {
+  getEffectiveCardDateRange,
+  isCardDateRangeValid,
+} = require('../../../utils/card-date-range');
+
 module.exports = {
   inputs: {
     record: {
@@ -43,6 +48,7 @@ module.exports = {
     listMustBeInValues: {},
     listInValuesMustBelongToBoard: {},
     coverAttachmentInValuesMustContainImage: {},
+    invalidDateRange: {},
   },
 
   // TODO: use normalizeValues and refactor
@@ -105,7 +111,11 @@ module.exports = {
       }
     }
 
-    const dueDate = _.isUndefined(values.dueDate) ? inputs.record.dueDate : values.dueDate;
+    const { startDate, dueDate } = getEffectiveCardDateRange(inputs.record, values);
+
+    if (!isCardDateRangeValid(startDate, dueDate)) {
+      throw 'invalidDateRange';
+    }
 
     if (dueDate) {
       const isDueCompleted = _.isUndefined(values.isDueCompleted)

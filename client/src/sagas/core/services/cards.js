@@ -229,7 +229,7 @@ export function* handleCardCreate(card) {
   );
 }
 
-export function* updateCard(id, data) {
+export function* updateCard(id, data, options = {}) {
   let prevListId;
   let isClosed;
 
@@ -274,11 +274,24 @@ export function* updateCard(id, data) {
   try {
     ({ item: card } = yield call(request, api.updateCard, id, data));
   } catch (error) {
+    if (options.rollbackData) {
+      yield put(actions.updateCard(id, options.rollbackData));
+    }
+
     yield put(actions.updateCard.failure(id, error));
+
+    if (options.onFailure) {
+      yield call(options.onFailure, error);
+    }
+
     return;
   }
 
   yield put(actions.updateCard.success(card));
+
+  if (options.onSuccess) {
+    yield call(options.onSuccess, card);
+  }
 }
 
 export function* updateCurrentCard(data) {

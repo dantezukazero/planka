@@ -176,6 +176,7 @@ module.exports = {
         'type',
         'name',
         'description',
+        'startDate',
         'dueDate',
         'isDueCompleted',
         'stopwatch',

@@ -4,6 +4,8 @@
  */
 
 const { POSITION_GAP } = require('../../../constants');
+const { isCardDateRangeValid } = require('../../../utils/card-date-range');
+const { getTrelloCardDateValues } = require('../../../utils/trello-card-dates');
 
 module.exports = {
   inputs: {
@@ -66,10 +68,13 @@ module.exports = {
           position: trelloCard.pos,
           name: trelloCard.name,
           description: trelloCard.desc || null,
-          dueDate: trelloCard.due,
-          isDueCompleted: trelloCard.due && trelloCard.dueComplete,
+          ...getTrelloCardDateValues(trelloCard),
           listChangedAt: new Date().toISOString(),
         };
+
+        if (!isCardDateRangeValid(values.startDate, values.dueDate)) {
+          throw new Error(`Invalid date range on Trello card ${trelloCard.id}`);
+        }
 
         const listId = listIdByTrelloListId[trelloCard.idList];
 

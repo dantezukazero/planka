@@ -52,11 +52,12 @@ const handleCardCreate = (card) => ({
   },
 });
 
-const updateCard = (id, data) => ({
+const updateCard = (id, data, options = {}) => ({
   type: EntryActionTypes.CARD_UPDATE,
   payload: {
     id,
     data,
+    options,
   },
 });
 

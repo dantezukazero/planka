@@ -14,6 +14,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/react/daygrid';
 import timeGridPlugin from '@fullcalendar/react/timegrid';
 import listPlugin from '@fullcalendar/react/list';
+import interactionPlugin from '@fullcalendar/react/interaction';
 import classicThemePlugin from '@fullcalendar/react/themes/classic';
 import { push } from '../../../lib/redux-router';
 import { usePopup } from '../../../lib/popup';
@@ -23,7 +24,9 @@ import '@fullcalendar/react/themes/classic/theme.css';
 import '@fullcalendar/react/themes/classic/palette.css';
 
 import selectors from '../../../selectors';
+import entryActions from '../../../entry-actions';
 import Paths from '../../../constants/Paths';
+import { BoardMembershipRoles } from '../../../constants/Enums';
 import {
   CalendarViews,
   changeCalendarView,
@@ -33,6 +36,11 @@ import {
   saveCalendarView,
 } from '../../../utils/calendar-preferences';
 import { loadFullCalendarLocale } from '../../../utils/fullcalendar-locales';
+import {
+  applyCalendarEditingPermissions,
+  getCalendarEventDropUpdate,
+  saveCalendarEventChange,
+} from '../../../utils/calendar-event-editing';
 import MonthPickerStep from './MonthPickerStep';
 
 import styles from './CalendarView.module.scss';
@@ -45,6 +53,11 @@ const CalendarView = React.memo(() => {
   const myEvents = useSelector(selectors.selectMyCalendarEventsForCurrentBoard);
   const hasDueDateCards = useSelector(selectors.selectHasDueDateCardsForCurrentBoard);
   const currentUserId = useSelector(selectors.selectCurrentUserId);
+  const canEditDates = useSelector((state) => {
+    const boardMembership = selectors.selectCurrentUserMembershipForCurrentBoard(state);
+
+    return !!boardMembership && boardMembership.role === BoardMembershipRoles.EDITOR;
+  });
 
   const dispatch = useDispatch();
   const [t, i18n] = useTranslation();
@@ -57,6 +70,10 @@ const CalendarView = React.memo(() => {
 
   const language = i18n.resolvedLanguage || 'en-US';
   const visibleEvents = isMyTasksOnly ? myEvents : events;
+  const editableEvents = useMemo(
+    () => applyCalendarEditingPermissions(visibleEvents, canEditDates),
+    [canEditDates, visibleEvents],
+  );
 
   useEffect(() => {
     let isCurrent = true;
@@ -73,7 +90,7 @@ const CalendarView = React.memo(() => {
   }, [language]);
 
   const plugins = useMemo(
-    () => [dayGridPlugin, timeGridPlugin, listPlugin, classicThemePlugin],
+    () => [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, classicThemePlugin],
     [],
   );
 
@@ -137,6 +154,35 @@ const CalendarView = React.memo(() => {
       dispatch(push(Paths.CARDS.replace(':id', event.extendedProps.cardId)));
     },
     [dispatch],
+  );
+
+  const saveEventChange = useCallback(
+    ({ event, oldEvent, revert }, getUpdate) => {
+      saveCalendarEventChange({
+        event,
+        oldEvent,
+        revert,
+        getUpdate,
+        updateCard: (cardId, data, options) => {
+          dispatch(entryActions.updateCard(cardId, data, options));
+        },
+      });
+    },
+    [dispatch],
+  );
+
+  const handleEventDrop = useCallback(
+    (info) => {
+      saveEventChange(info, getCalendarEventDropUpdate);
+    },
+    [saveEventChange],
+  );
+
+  const handleEventResize = useCallback(
+    (info) => {
+      saveEventChange(info);
+    },
+    [saveEventChange],
   );
 
   const renderEventContent = useCallback(({ event, timeText }) => {
@@ -245,15 +291,18 @@ const CalendarView = React.memo(() => {
           initialView={initialCalendarViewRef.current}
           locale={fullCalendarLocale}
           timeZone="local"
-          events={visibleEvents}
+          allDayMaintainDuration
+          events={editableEvents}
           eventOrder="start,title"
           eventClass="calendar-card-event"
+          eventAfterClass="calendar-card-resize-handle"
           eventColor="var(--calendar-event-color)"
-          editable={false}
+          editable={canEditDates}
           selectable={false}
           navLinks={false}
-          eventStartEditable={false}
-          eventDurationEditable={false}
+          eventStartEditable={canEditDates}
+          eventDurationEditable={canEditDates}
+          eventResizableFromStart={false}
           headerToolbar={false}
           dayMaxEvents
           nowIndicator
@@ -261,6 +310,8 @@ const CalendarView = React.memo(() => {
           height="100%"
           eventContent={renderEventContent}
           eventClick={handleEventClick}
+          eventDrop={handleEventDrop}
+          eventResize={handleEventResize}
           datesSet={handleDatesSet}
         />
         {emptyState && (

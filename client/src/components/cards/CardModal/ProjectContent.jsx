@@ -414,9 +414,9 @@ const ProjectContent = React.memo(() => {
               {card.dueDate && (
                 <div className={styles.attachments}>
                   <div className={styles.text}>
-                    {t('common.dueDate', {
-                      context: 'title',
-                    })}
+                    {card.startDate
+                      ? t('common.dateRange', { context: 'title' })
+                      : t('common.dueDate', { context: 'title' })}
                   </div>
                   <span className={classNames(styles.attachment, styles.attachmentDueDate)}>
                     {canEditDueDate ? (
@@ -429,21 +429,55 @@ const ProjectContent = React.memo(() => {
                           />
                         )}
                         <EditDueDatePopup cardId={card.id}>
+                          <span className={styles.dateRangeChips} data-testid="card-date-range">
+                            {card.startDate && (
+                              <span>
+                                <span className={styles.dateRangeLabel}>{t('common.from')}</span>
+                                <DueDateChip
+                                  value={card.startDate}
+                                  isCompleted={false}
+                                  withStatus={false}
+                                />
+                              </span>
+                            )}
+                            <span>
+                              {card.startDate && (
+                                <span className={styles.dateRangeLabel}>{t('common.until')}</span>
+                              )}
+                              <DueDateChip
+                                withStatusIcon
+                                value={card.dueDate}
+                                isCompleted={card.isDueCompleted}
+                                withStatus={!card.isClosed}
+                              />
+                            </span>
+                          </span>
+                        </EditDueDatePopup>
+                      </>
+                    ) : (
+                      <span className={styles.dateRangeChips} data-testid="card-date-range">
+                        {card.startDate && (
+                          <span>
+                            <span className={styles.dateRangeLabel}>{t('common.from')}</span>
+                            <DueDateChip
+                              value={card.startDate}
+                              isCompleted={false}
+                              withStatus={false}
+                            />
+                          </span>
+                        )}
+                        <span>
+                          {card.startDate && (
+                            <span className={styles.dateRangeLabel}>{t('common.until')}</span>
+                          )}
                           <DueDateChip
                             withStatusIcon
                             value={card.dueDate}
                             isCompleted={card.isDueCompleted}
                             withStatus={!card.isClosed}
                           />
-                        </EditDueDatePopup>
-                      </>
-                    ) : (
-                      <DueDateChip
-                        withStatusIcon
-                        value={card.dueDate}
-                        isCompleted={card.isDueCompleted}
-                        withStatus={!card.isClosed}
-                      />
+                        </span>
+                      </span>
                     )}
                   </span>
                 </div>

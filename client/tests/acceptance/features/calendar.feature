@@ -22,3 +22,29 @@ Feature: Board calendar
     And the user hides the Grid and List board views
     And the user reloads the board
     Then the Grid and List board views should remain hidden
+
+  Scenario: Add a start and due range in the existing card modal
+    Given the user is logged in with email or username "demo" and password "demo"
+    And the configured calendar board is open
+    When the user selects the Calendar board view
+    And the user opens the configured due-date card from the calendar
+    And the user adds a start to the open card
+    Then the open card should show a date range
+    When the user reloads the board
+    Then the open card should show a date range
+
+  Scenario: Move and resize a configured date range and keep it after reload
+    Given the user is logged in with email or username "demo" and password "demo"
+    And the configured calendar board is open
+    When the user selects the Calendar board view
+    Then the configured range card should be visible in the calendar
+    When the user selects the Week calendar view
+    Then the configured range card should be visible in the calendar
+    When the user selects the Agenda calendar view
+    Then the configured range card should be visible in the calendar
+    When the user selects the Month calendar view
+    Then the configured range card should expose an end resize handle
+    When the user drags the configured range card to the next day
+    And the user extends the configured range card by one day
+    And the user reloads the board
+    Then the configured range card should be visible in the calendar

@@ -62,6 +62,12 @@
  *                 nullable: true
  *                 description: Detailed description of the card
  *                 example: Add JWT-based authentication system...
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *                 description: Optional start date for a card date range (requires dueDate)
+ *                 example: 2023-12-30T00:00:00.000Z
  *               dueDate:
  *                 type: string
  *                 format: date-time
@@ -145,6 +151,9 @@ const Errors = {
   POSITION_MUST_BE_PRESENT: {
     positionMustBePresent: 'Position must be present',
   },
+  INVALID_DATE_RANGE: {
+    invalidDateRange: 'Start date must not be after due date and requires a due date',
+  },
 };
 
 module.exports = {
@@ -177,6 +186,11 @@ module.exports = {
       type: 'string',
       isNotEmptyString: true,
       maxLength: 1048576,
+      allowNull: true,
+    },
+    startDate: {
+      type: 'string',
+      custom: isDueDate,
       allowNull: true,
     },
     dueDate: {
@@ -222,6 +236,9 @@ module.exports = {
     positionMustBePresent: {
       responseType: 'unprocessableEntity',
     },
+    invalidDateRange: {
+      responseType: 'unprocessableEntity',
+    },
   },
 
   async fn(inputs) {
@@ -253,6 +270,7 @@ module.exports = {
         'position',
         'name',
         'description',
+        'startDate',
         'dueDate',
         'isDueCompleted',
         'stopwatch',
@@ -313,6 +331,7 @@ module.exports = {
       'position',
       'name',
       'description',
+      'startDate',
       'dueDate',
       'isDueCompleted',
       'stopwatch',
@@ -340,7 +359,8 @@ module.exports = {
       .intercept(
         'coverAttachmentInValuesMustContainImage',
         () => Errors.COVER_ATTACHMENT_MUST_CONTAIN_IMAGE,
-      );
+      )
+      .intercept('invalidDateRange', () => Errors.INVALID_DATE_RANGE);
 
     if (!card) {
       throw Errors.CARD_NOT_FOUND;

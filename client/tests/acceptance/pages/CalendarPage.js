@@ -4,6 +4,7 @@ export default class CalendarPage {
   constructor() {
     this.boardPath = process.env.CALENDAR_BOARD_PATH;
     this.cardTitle = process.env.CALENDAR_CARD_TITLE;
+    this.rangeCardTitle = process.env.CALENDAR_RANGE_CARD_TITLE;
 
     this.calendarSelector = '[data-testid="calendar-view"]';
     this.calendarViewButtonSelector =
@@ -19,6 +20,14 @@ export default class CalendarPage {
     if (!this.boardPath || !this.cardTitle) {
       throw new Error(
         'CALENDAR_BOARD_PATH and CALENDAR_CARD_TITLE must identify a board fixture with a due-date card',
+      );
+    }
+  }
+
+  assertRangeConfigured() {
+    if (!this.rangeCardTitle) {
+      throw new Error(
+        'CALENDAR_RANGE_CARD_TITLE must identify an editable card with startDate and dueDate',
       );
     }
   }
@@ -77,7 +86,82 @@ export default class CalendarPage {
     });
   }
 
+  getRangeCardEvent() {
+    this.assertRangeConfigured();
+    return page.locator(`${this.calendarSelector} .calendar-card-event`, {
+      hasText: this.rangeCardTitle,
+    });
+  }
+
+  getRangeCardResizeHandle() {
+    return this.getRangeCardEvent().locator('.calendar-card-resize-handle');
+  }
+
+  async dragRangeCardToNextDay() {
+    const event = this.getRangeCardEvent();
+    const dayCell = page.locator(`${this.calendarSelector} .fc-daygrid-day`).first();
+    const [eventBox, dayCellBox] = await Promise.all([event.boundingBox(), dayCell.boundingBox()]);
+
+    if (!eventBox || !dayCellBox) {
+      throw new Error('The range event or calendar day cell has no visible bounding box');
+    }
+
+    await page.mouse.move(eventBox.x + eventBox.width / 2, eventBox.y + eventBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      eventBox.x + eventBox.width / 2 + dayCellBox.width,
+      eventBox.y + eventBox.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await event.waitFor({ state: 'visible' });
+  }
+
+  async extendRangeCardByOneDay() {
+    const handle = this.getRangeCardResizeHandle();
+    const dayCell = page.locator(`${this.calendarSelector} .fc-daygrid-day`).first();
+    const [handleBox, dayCellBox] = await Promise.all([
+      handle.boundingBox(),
+      dayCell.boundingBox(),
+    ]);
+
+    if (!handleBox || !dayCellBox) {
+      throw new Error('The range resize handle or calendar day cell has no visible bounding box');
+    }
+
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      handleBox.x + handleBox.width / 2 + dayCellBox.width,
+      handleBox.y + handleBox.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await this.getRangeCardEvent().waitFor({ state: 'visible' });
+  }
+
   getCardModal() {
     return page.locator(this.cardModalSelector);
+  }
+
+  async setStartOnOpenCard() {
+    await this.getCardModal().getByTestId('card-date-range').click();
+
+    const editor = page.getByTestId('date-range-editor');
+    const startToggle = editor.locator('input[type="checkbox"]');
+    if (!(await startToggle.isChecked())) {
+      await startToggle.check({ force: true });
+    }
+
+    const dueDate = await editor.locator('input[name="dueDate"]').inputValue();
+    const dueTime = await editor.locator('input[name="dueTime"]').inputValue();
+    await editor.locator('input[name="startDate"]').fill(dueDate);
+    await editor.locator('input[name="startTime"]').fill(dueTime);
+    await editor.getByRole('button', { name: /Save|Speichern/ }).click();
+    await editor.waitFor({ state: 'detached' });
+  }
+
+  getOpenCardDateRange() {
+    return this.getCardModal().getByTestId('card-date-range');
   }
 }

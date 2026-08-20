@@ -120,6 +120,21 @@
     }
   }
 
+  .dateRangeChips {
+    align-items: flex-end;
+    display: flex;
+    gap: 6px;
+  }
+
+  .dateRangeLabel {
+    color: #6b808c;
+    display: block;
+    font-size: 10px;
+    line-height: 13px;
+    margin-left: 2px;
+    text-transform: uppercase;
+  }
+
   .descriptionButton {
     background: rgba(9, 30, 66, 0.04);
     border: none;

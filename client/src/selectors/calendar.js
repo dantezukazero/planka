@@ -10,18 +10,32 @@ import orm from '../orm';
 import { selectPath } from './router';
 import { selectCurrentUserId } from './users';
 
+const isValidDate = (value) => value instanceof Date && !Number.isNaN(value.getTime());
+
 const createCalendarEvent = (cardModel) => {
   const labels = cardModel.labels.toRefArray().map(({ id, name, color }) => ({ id, name, color }));
+  const hasValidRange =
+    isValidDate(cardModel.startDate) &&
+    isValidDate(cardModel.dueDate) &&
+    cardModel.startDate.getTime() <= cardModel.dueDate.getTime();
+  const userIds = cardModel.users.toRefArray().map((user) => user.id);
+  const labelIds = labels.map((label) => label.id);
 
   return {
     id: cardModel.id,
     title: cardModel.name,
-    start: cardModel.dueDate,
+    start: hasValidRange ? cardModel.startDate : cardModel.dueDate,
+    ...(hasValidRange && {
+      end: cardModel.dueDate,
+    }),
     allDay: false,
-    cardId: cardModel.id,
-    userIds: cardModel.users.toRefArray().map((user) => user.id),
-    labelIds: labels.map((label) => label.id),
-    labels,
+    extendedProps: {
+      cardId: cardModel.id,
+      userIds,
+      labelIds,
+      labels,
+      isDateRange: hasValidRange,
+    },
   };
 };
 
@@ -41,7 +55,7 @@ export const selectCalendarEventsForCurrentBoard = createReduxOrmSelector(
 
     return boardModel
       .getFilteredCardsModelArray()
-      .filter((cardModel) => cardModel.dueDate !== null)
+      .filter((cardModel) => isValidDate(cardModel.dueDate))
       .map(createCalendarEvent);
   },
 );
@@ -50,7 +64,7 @@ export const selectMyCalendarEventsForCurrentBoard = createReselectSelector(
   selectCalendarEventsForCurrentBoard,
   selectCurrentUserId,
   (events, currentUserId) =>
-    events && events.filter((event) => event.userIds.includes(currentUserId)),
+    events && events.filter((event) => event.extendedProps.userIds.includes(currentUserId)),
 );
 
 export const selectHasDueDateCardsForCurrentBoard = createReduxOrmSelector(
@@ -65,7 +79,7 @@ export const selectHasDueDateCardsForCurrentBoard = createReduxOrmSelector(
 
     return (
       !!boardModel &&
-      boardModel.getCardsModelArray().some((cardModel) => cardModel.dueDate !== null)
+      boardModel.getCardsModelArray().some((cardModel) => isValidDate(cardModel.dueDate))
     );
   },
 );

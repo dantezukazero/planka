@@ -98,6 +98,7 @@ const createState = ({ cards = [], filterUserIds = [], filterLabelIds = [], sear
     ({
       id,
       name = id,
+      startDate = null,
       dueDate = null,
       listType = ListTypes.ACTIVE,
       boardId = BOARD_ID,
@@ -111,6 +112,7 @@ const createState = ({ cards = [], filterUserIds = [], filterLabelIds = [], sear
         boardId,
         listId,
         name,
+        startDate,
         dueDate,
         position: 0,
       });
@@ -143,6 +145,12 @@ describe('selectCalendarEventsForCurrentBoard', () => {
     expect(selectCalendarEventsForCurrentBoard(state)).toEqual([]);
   });
 
+  test('excludes a card with an invalid due-date value', () => {
+    const state = createState({ cards: [{ id: 'card-1', dueDate: new Date('invalid') }] });
+
+    expect(selectCalendarEventsForCurrentBoard(state)).toEqual([]);
+  });
+
   test('includes a card with its title and identifiers', () => {
     const dueDate = new Date('2026-08-20T12:30:00.000Z');
     const state = createState({
@@ -155,10 +163,13 @@ describe('selectCalendarEventsForCurrentBoard', () => {
         title: 'Calendar card',
         start: dueDate,
         allDay: false,
-        cardId: 'card-1',
-        userIds: [],
-        labelIds: [],
-        labels: [],
+        extendedProps: {
+          cardId: 'card-1',
+          userIds: [],
+          labelIds: [],
+          labels: [],
+          isDateRange: false,
+        },
       },
     ]);
   });
@@ -177,6 +188,51 @@ describe('selectCalendarEventsForCurrentBoard', () => {
     ]);
   });
 
+  test('maps a multi-day card to an exact timed range', () => {
+    const startDate = new Date('2026-08-20T09:00:00.000Z');
+    const dueDate = new Date('2026-08-23T17:00:00.000Z');
+    const state = createState({
+      cards: [{ id: 'card-1', startDate, dueDate }],
+    });
+
+    expect(selectCalendarEventsForCurrentBoard(state)[0]).toEqual(
+      expect.objectContaining({
+        start: startDate,
+        end: dueDate,
+        allDay: false,
+        extendedProps: expect.objectContaining({ isDateRange: true }),
+      }),
+    );
+  });
+
+  test('maps a same-day range without changing either timestamp', () => {
+    const startDate = new Date('2026-08-20T09:00:00.000Z');
+    const dueDate = new Date('2026-08-20T17:00:00.000Z');
+    const state = createState({
+      cards: [{ id: 'card-1', startDate, dueDate }],
+    });
+
+    const [event] = selectCalendarEventsForCurrentBoard(state);
+
+    expect([event.start, event.end]).toEqual([startDate, dueDate]);
+  });
+
+  test('falls back to the due-date instant for an invalid stored range', () => {
+    const startDate = new Date('2026-08-21T09:00:00.000Z');
+    const dueDate = new Date('2026-08-20T17:00:00.000Z');
+    const state = createState({
+      cards: [{ id: 'card-1', startDate, dueDate }],
+    });
+
+    expect(selectCalendarEventsForCurrentBoard(state)[0]).toEqual(
+      expect.objectContaining({
+        start: dueDate,
+        extendedProps: expect.objectContaining({ isDateRange: false }),
+      }),
+    );
+    expect(selectCalendarEventsForCurrentBoard(state)[0]).not.toHaveProperty('end');
+  });
+
   test('maps card memberships to userIds', () => {
     const state = createState({
       cards: [
@@ -188,7 +244,7 @@ describe('selectCalendarEventsForCurrentBoard', () => {
       ],
     });
 
-    expect(selectCalendarEventsForCurrentBoard(state)[0].userIds).toEqual([
+    expect(selectCalendarEventsForCurrentBoard(state)[0].extendedProps.userIds).toEqual([
       CURRENT_USER_ID,
       OTHER_USER_ID,
     ]);
@@ -244,7 +300,10 @@ describe('selectCalendarEventsForCurrentBoard', () => {
     });
 
     expect(selectCalendarEventsForCurrentBoard(state)).toEqual([
-      expect.objectContaining({ id: 'second', labelIds: ['label-2'] }),
+      expect.objectContaining({
+        id: 'second',
+        extendedProps: expect.objectContaining({ labelIds: ['label-2'] }),
+      }),
     ]);
   });
 
@@ -259,7 +318,7 @@ describe('selectCalendarEventsForCurrentBoard', () => {
       ],
     });
 
-    expect(selectCalendarEventsForCurrentBoard(state)[0].labels).toEqual([
+    expect(selectCalendarEventsForCurrentBoard(state)[0].extendedProps.labels).toEqual([
       { id: 'label-1', name: 'First label', color: 'berry-red' },
     ]);
   });
@@ -275,7 +334,7 @@ describe('selectCalendarEventsForCurrentBoard', () => {
       ],
     });
 
-    expect(selectCalendarEventsForCurrentBoard(state)[0].labels).toEqual([
+    expect(selectCalendarEventsForCurrentBoard(state)[0].extendedProps.labels).toEqual([
       { id: 'label-1', name: 'First label', color: 'berry-red' },
       { id: 'label-2', name: 'Second label', color: 'lagoon-blue' },
     ]);
@@ -290,8 +349,12 @@ describe('selectCalendarEventsForCurrentBoard', () => {
       cards: [{ id: 'card-1', dueDate, labelIds: ['label-2'] }],
     });
 
-    expect(selectCalendarEventsForCurrentBoard(beforeState)[0].labels[0].color).toBe('berry-red');
-    expect(selectCalendarEventsForCurrentBoard(afterState)[0].labels[0].color).toBe('lagoon-blue');
+    expect(selectCalendarEventsForCurrentBoard(beforeState)[0].extendedProps.labels[0].color).toBe(
+      'berry-red',
+    );
+    expect(selectCalendarEventsForCurrentBoard(afterState)[0].extendedProps.labels[0].color).toBe(
+      'lagoon-blue',
+    );
   });
 
   test('includes cards from a closed list', () => {
@@ -346,6 +409,19 @@ describe('selectCalendarEventsForCurrentBoard', () => {
 
     expect(start).toBe(nearMidnight);
     expect(start.toISOString()).toBe('2026-03-29T00:30:00.000Z');
+  });
+
+  test('preserves a range across a daylight-saving boundary', () => {
+    const startDate = new Date('2026-03-28T23:30:00.000Z');
+    const dueDate = new Date('2026-03-29T02:30:00.000Z');
+    const state = createState({
+      cards: [{ id: 'dst-range', startDate, dueDate }],
+    });
+
+    const [{ start, end }] = selectCalendarEventsForCurrentBoard(state);
+
+    expect(start).toBe(startDate);
+    expect(end).toBe(dueDate);
   });
 
   test('preserves the normal local due-date slot used by Week and Agenda', () => {

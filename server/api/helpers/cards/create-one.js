@@ -3,6 +3,8 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+const { isCardDateRangeValid } = require('../../../utils/card-date-range');
+
 module.exports = {
   inputs: {
     values: {
@@ -20,10 +22,15 @@ module.exports = {
 
   exits: {
     positionMustBeInValues: {},
+    invalidDateRange: {},
   },
 
   async fn(inputs) {
     const { values } = inputs;
+
+    if (!isCardDateRangeValid(values.startDate, values.dueDate)) {
+      throw 'invalidDateRange';
+    }
 
     if (values.dueDate) {
       if (_.isNil(values.isDueCompleted)) {
