@@ -8,6 +8,10 @@ export default class CalendarPage {
     this.calendarSelector = '[data-testid="calendar-view"]';
     this.calendarViewButtonSelector =
       'button[aria-label="Calendar"], button[aria-label="Kalender"]';
+    this.calendarSubviewSelector =
+      'select[aria-label="Calendar view"], select[aria-label="Kalenderansicht"]';
+    this.boardActionsButtonSelector =
+      'button[aria-label="Board Actions"], button[aria-label="Arbeitsbereich-Aktionen"]';
     this.cardModalSelector = '.ui.modal.visible';
   }
 
@@ -30,6 +34,40 @@ export default class CalendarPage {
 
   getCalendar() {
     return page.locator(this.calendarSelector);
+  }
+
+  async selectCalendarSubview(view) {
+    await page.locator(this.calendarSubviewSelector).selectOption(view);
+  }
+
+  getCalendarSubview(view) {
+    return page.locator(`${this.calendarSelector} [data-calendar-view="${view}"]`);
+  }
+
+  async openViewManager() {
+    await page.click(this.boardActionsButtonSelector);
+    await page.getByText(/Manage Views|Ansichten verwalten/, { exact: true }).click();
+  }
+
+  async hideBoardView(view) {
+    const checkbox = page.locator(`input[value="${view}"]`);
+
+    if (await checkbox.isChecked()) {
+      await checkbox.uncheck({ force: true });
+    }
+  }
+
+  async reload() {
+    await page.reload();
+  }
+
+  getBoardViewButton(view) {
+    const labels = {
+      grid: ['Grid', 'Raster'],
+      list: ['List', 'Liste'],
+    };
+
+    return page.locator(labels[view].map((label) => `button[aria-label="${label}"]`).join(', '));
   }
 
   getDueDateCardEvent() {

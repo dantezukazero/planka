@@ -23,7 +23,7 @@ const CURRENT_USER_ID = 'user-1';
 const OTHER_USER_ID = 'user-2';
 const BOARD_ID = 'board-1';
 
-const createState = ({ cards = [], filterUserIds = [], filterLabelIds = [] } = {}) => {
+const createState = ({ cards = [], filterUserIds = [], filterLabelIds = [], search = '' } = {}) => {
   const session = orm.mutableSession(orm.getEmptyState());
 
   session.User.create({
@@ -45,7 +45,7 @@ const createState = ({ cards = [], filterUserIds = [], filterLabelIds = [] } = {
     projectId: 'project-1',
     name: 'Board',
     view: BoardViews.CALENDAR,
-    search: '',
+    search,
   });
   session.BoardMembership.create({
     id: 'board-membership-1',
@@ -83,12 +83,14 @@ const createState = ({ cards = [], filterUserIds = [], filterLabelIds = [] } = {
     id: 'label-1',
     boardId: BOARD_ID,
     name: 'First label',
+    color: 'berry-red',
     position: 0,
   });
   session.Label.create({
     id: 'label-2',
     boardId: BOARD_ID,
     name: 'Second label',
+    color: 'lagoon-blue',
     position: 1,
   });
 
@@ -156,6 +158,7 @@ describe('selectCalendarEventsForCurrentBoard', () => {
         cardId: 'card-1',
         userIds: [],
         labelIds: [],
+        labels: [],
       },
     ]);
   });
@@ -217,6 +220,19 @@ describe('selectCalendarEventsForCurrentBoard', () => {
     expect(selectCalendarEventsForCurrentBoard(state).map(({ id }) => id)).toEqual(['theirs']);
   });
 
+  test('respects the existing board search filter', () => {
+    const dueDate = new Date('2026-08-20T12:00:00.000Z');
+    const state = createState({
+      cards: [
+        { id: 'matching', name: 'Release calendar', dueDate },
+        { id: 'hidden', name: 'Unrelated work', dueDate },
+      ],
+      search: 'calendar',
+    });
+
+    expect(selectCalendarEventsForCurrentBoard(state).map(({ id }) => id)).toEqual(['matching']);
+  });
+
   test('respects the existing board label filter and exposes labelIds', () => {
     const dueDate = new Date('2026-08-20T12:00:00.000Z');
     const state = createState({
@@ -230,6 +246,52 @@ describe('selectCalendarEventsForCurrentBoard', () => {
     expect(selectCalendarEventsForCurrentBoard(state)).toEqual([
       expect.objectContaining({ id: 'second', labelIds: ['label-2'] }),
     ]);
+  });
+
+  test('exposes one existing PLANKA label color for an event', () => {
+    const state = createState({
+      cards: [
+        {
+          id: 'card-1',
+          dueDate: new Date('2026-08-20T12:00:00.000Z'),
+          labelIds: ['label-1'],
+        },
+      ],
+    });
+
+    expect(selectCalendarEventsForCurrentBoard(state)[0].labels).toEqual([
+      { id: 'label-1', name: 'First label', color: 'berry-red' },
+    ]);
+  });
+
+  test('exposes multiple existing PLANKA label colors in label order', () => {
+    const state = createState({
+      cards: [
+        {
+          id: 'card-1',
+          dueDate: new Date('2026-08-20T12:00:00.000Z'),
+          labelIds: ['label-1', 'label-2'],
+        },
+      ],
+    });
+
+    expect(selectCalendarEventsForCurrentBoard(state)[0].labels).toEqual([
+      { id: 'label-1', name: 'First label', color: 'berry-red' },
+      { id: 'label-2', name: 'Second label', color: 'lagoon-blue' },
+    ]);
+  });
+
+  test('reflects a label color change from the existing Redux ORM state', () => {
+    const dueDate = new Date('2026-08-20T12:00:00.000Z');
+    const beforeState = createState({
+      cards: [{ id: 'card-1', dueDate, labelIds: ['label-1'] }],
+    });
+    const afterState = createState({
+      cards: [{ id: 'card-1', dueDate, labelIds: ['label-2'] }],
+    });
+
+    expect(selectCalendarEventsForCurrentBoard(beforeState)[0].labels[0].color).toBe('berry-red');
+    expect(selectCalendarEventsForCurrentBoard(afterState)[0].labels[0].color).toBe('lagoon-blue');
   });
 
   test('includes cards from a closed list', () => {
@@ -284,6 +346,22 @@ describe('selectCalendarEventsForCurrentBoard', () => {
 
     expect(start).toBe(nearMidnight);
     expect(start.toISOString()).toBe('2026-03-29T00:30:00.000Z');
+  });
+
+  test('preserves the normal local due-date slot used by Week and Agenda', () => {
+    const localDueDate = new Date(2026, 7, 20, 9, 30);
+    const state = createState({
+      cards: [{ id: 'local-card', dueDate: localDueDate }],
+    });
+
+    const [{ start }] = selectCalendarEventsForCurrentBoard(state);
+
+    expect(start).toBe(localDueDate);
+    expect([start.getDay(), start.getHours(), start.getMinutes()]).toEqual([
+      localDueDate.getDay(),
+      9,
+      30,
+    ]);
   });
 
   test('is memoized for unchanged state', () => {

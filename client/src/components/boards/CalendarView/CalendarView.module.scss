@@ -5,48 +5,54 @@
 
 :global(#app) {
   .wrapper {
-    background: #f5f6f7;
+    --calendar-panel-background: rgba(255, 255, 255, 0.94);
+    --calendar-panel-border: rgba(9, 30, 66, 0.14);
+    --calendar-text: #172b4d;
+    --calendar-muted-text: #6b778c;
+    --calendar-control-background: rgba(255, 255, 255, 0.94);
+    --calendar-control-hover: #f2f3f5;
+    --calendar-control-border: rgba(9, 30, 66, 0.2);
+    --calendar-focus: #2185d0;
+    --calendar-event-color: #2185d0;
+    --fc-classic-background: var(--calendar-panel-background);
+    --fc-classic-foreground: var(--calendar-text);
+    --fc-classic-muted-foreground: var(--calendar-muted-text);
+    --fc-classic-border: rgba(9, 30, 66, 0.13);
+    --fc-classic-primary: var(--calendar-event-color);
+    --fc-classic-event: var(--calendar-event-color);
+
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
-    padding: 16px 20px 20px;
+    padding: 12px 20px 20px;
     width: 100%;
   }
 
-  .controls {
-    align-items: center;
-    display: flex;
-    flex: 0 0 auto;
-    justify-content: flex-end;
-    margin-bottom: 12px;
-  }
-
   .calendar {
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(9, 30, 66, 0.18);
+    backdrop-filter: blur(5px);
+    background: var(--calendar-panel-background);
+    border: 1px solid var(--calendar-panel-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(9, 30, 66, 0.18);
     flex: 1 1 auto;
     min-height: 440px;
-    padding: 16px;
+    padding: 14px;
     position: relative;
 
-    // FullCalendar v7 intentionally hashes internal classes. This class is injected through the
-    // public eventClass option and remains scoped below this component.
     :global(.calendar-card-event) {
       cursor: pointer;
-    }
-  }
 
-  .fullCalendar {
-    color: #172b4d;
-    font-family: inherit;
-    font-size: 14px;
+      &:focus-visible {
+        box-shadow: 0 0 0 3px rgba(33, 133, 208, 0.35);
+        outline: none;
+      }
+    }
   }
 
   .emptyState {
     align-items: center;
-    color: #6b778c;
+    color: var(--calendar-muted-text);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -57,22 +63,223 @@
     top: 52%;
     transform: translate(-50%, -50%);
   }
+
+  .eventContent {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .eventTime {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    font-weight: bold;
+  }
+
+  .eventTitle {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fullCalendar {
+    color: var(--calendar-text);
+    font-family: inherit;
+    font-size: 14px;
+  }
+
+  .labelMarker {
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(9, 30, 66, 0.12);
+    display: block;
+    flex: 0 0 auto;
+    height: 7px;
+    width: 7px;
+  }
+
+  .labelMarkers {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 2px;
+  }
+
+  .navigation {
+    display: inline-flex;
+
+    .toolbarButton {
+      border-radius: 0;
+      border-right-width: 0;
+
+      &:first-child {
+        border-bottom-left-radius: 3px;
+        border-top-left-radius: 3px;
+      }
+
+      &:last-child {
+        border-bottom-right-radius: 3px;
+        border-right-width: 1px;
+        border-top-right-radius: 3px;
+      }
+    }
+  }
+
+  .periodButton {
+    font-size: 15px;
+    font-weight: bold;
+    gap: 7px;
+    justify-content: space-between;
+    min-width: 150px;
+    text-transform: capitalize;
+  }
+
+  .screenReaderOnly {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .todayButton {
+    min-width: 64px;
+  }
+
+  .toolbar {
+    align-items: center;
+    backdrop-filter: blur(5px);
+    background: rgba(9, 30, 66, 0.34);
+    border-radius: 6px;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 8px;
+  }
+
+  .toolbarButton {
+    align-items: center;
+    background: var(--calendar-control-background);
+    border: 1px solid var(--calendar-control-border);
+    border-radius: 3px;
+    color: var(--calendar-text);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    justify-content: center;
+    line-height: 20px;
+    min-height: 34px;
+    padding: 6px 10px;
+
+    &:hover {
+      background: var(--calendar-control-hover);
+    }
+
+    &:focus-visible {
+      border-color: var(--calendar-focus);
+      box-shadow: 0 0 0 2px rgba(33, 133, 208, 0.32);
+      outline: none;
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .toolbarPrimary,
+  .toolbarSecondary {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+  }
+
+  .toolbarSecondary {
+    color: #fff;
+
+    :global(.ui.checkbox label),
+    :global(.ui.checkbox input:focus ~ label) {
+      color: #fff;
+    }
+  }
+
+  .viewSelect {
+    appearance: none;
+    background: var(--calendar-control-background);
+    border: 1px solid var(--calendar-control-border);
+    border-radius: 3px;
+    color: var(--calendar-text);
+    cursor: pointer;
+    font: inherit;
+    min-height: 34px;
+    padding: 6px 32px 6px 10px;
+
+    &:hover {
+      background: var(--calendar-control-hover);
+    }
+
+    &:focus-visible {
+      border-color: var(--calendar-focus);
+      box-shadow: 0 0 0 2px rgba(33, 133, 208, 0.32);
+      outline: none;
+    }
+  }
+
+  .viewSelectIcon {
+    color: var(--calendar-text);
+    pointer-events: none;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+  }
+
+  .viewSelectLabel {
+    position: relative;
+  }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 900px) {
+  :global(#app) {
+    .toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .toolbarPrimary,
+    .toolbarSecondary {
+      justify-content: space-between;
+    }
+  }
+}
+
+@media (max-width: 560px) {
   :global(#app) {
     .wrapper {
-      padding: 8px;
+      padding: 6px;
     }
 
     .calendar {
-      min-height: 360px;
+      min-height: 380px;
       overflow-x: auto;
-      padding: 8px;
+      padding: 6px;
+    }
 
-      .fullCalendar {
-        min-width: 560px;
-      }
+    .fullCalendar {
+      font-size: 12px;
+      min-width: 480px;
+    }
+
+    .toolbarPrimary,
+    .toolbarSecondary {
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+
+    .periodButton {
+      flex: 1 1 auto;
     }
   }
 }

@@ -3,7 +3,7 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { Icon } from 'semantic-ui-react';
@@ -11,17 +11,36 @@ import { usePopup } from '../../../../lib/popup';
 
 import selectors from '../../../../selectors';
 import entryActions from '../../../../entry-actions';
-import { BoardContexts, BoardViews } from '../../../../constants/Enums';
+import { BoardContexts } from '../../../../constants/Enums';
 import { BoardViewIcons } from '../../../../constants/Icons';
 import ActionsStep from './ActionsStep';
+import {
+  getFallbackBoardView,
+  getVisibleBoardViewsForContext,
+  loadVisibleBoardViews,
+  saveVisibleBoardViews,
+  setBoardViewVisibility,
+} from '../../../../utils/board-view-preferences';
 
 import styles from './RightSide.module.scss';
 
 const RightSide = React.memo(() => {
   const board = useSelector(selectors.selectCurrentBoard);
+  const currentUserId = useSelector(selectors.selectCurrentUserId);
 
   const dispatch = useDispatch();
   const [t] = useTranslation();
+  const [visibleViews, setVisibleViews] = useState(() => loadVisibleBoardViews(currentUserId));
+
+  useEffect(() => {
+    setVisibleViews(loadVisibleBoardViews(currentUserId));
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (board.context === BoardContexts.BOARD && !visibleViews.includes(board.view)) {
+      dispatch(entryActions.updateViewInCurrentBoard(getFallbackBoardView(visibleViews)));
+    }
+  }, [board.context, board.view, dispatch, visibleViews]);
 
   const handleSelectViewClick = useCallback(
     ({ currentTarget: { value: view } }) => {
@@ -32,11 +51,24 @@ const RightSide = React.memo(() => {
 
   const ActionsPopup = usePopup(ActionsStep);
 
-  const views = [BoardViews.GRID, BoardViews.LIST];
-  if (board.context === BoardContexts.BOARD) {
-    views.unshift(BoardViews.KANBAN);
-    views.push(BoardViews.CALENDAR);
-  }
+  const handleToggleView = useCallback(
+    (view, isVisible) => {
+      const nextVisibleViews = setBoardViewVisibility(visibleViews, view, isVisible);
+
+      if (nextVisibleViews === visibleViews) {
+        return;
+      }
+
+      setVisibleViews(saveVisibleBoardViews(currentUserId, nextVisibleViews));
+
+      if (!nextVisibleViews.includes(board.view)) {
+        dispatch(entryActions.updateViewInCurrentBoard(getFallbackBoardView(nextVisibleViews)));
+      }
+    },
+    [board.view, currentUserId, dispatch, visibleViews],
+  );
+
+  const views = getVisibleBoardViewsForContext(board.context, visibleViews);
 
   return (
     <>
@@ -59,8 +91,13 @@ const RightSide = React.memo(() => {
         </div>
       </div>
       <div className={styles.action}>
-        <ActionsPopup>
-          <button type="button" className={styles.button}>
+        <ActionsPopup visibleViews={visibleViews} onToggleView={handleToggleView}>
+          <button
+            type="button"
+            title={t('common.boardActions', { context: 'title' })}
+            aria-label={t('common.boardActions', { context: 'title' })}
+            className={styles.button}
+          >
             <Icon fitted name="ellipsis vertical" />
           </button>
         </ActionsPopup>

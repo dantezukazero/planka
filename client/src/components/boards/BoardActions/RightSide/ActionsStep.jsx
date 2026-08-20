@@ -13,19 +13,21 @@ import { Popup } from '../../../../lib/custom-ui';
 import selectors from '../../../../selectors';
 import entryActions from '../../../../entry-actions';
 import { useSteps } from '../../../../hooks';
-import { BoardContexts, BoardMembershipRoles } from '../../../../constants/Enums';
+import { BoardContexts, BoardMembershipRoles, BoardViews } from '../../../../constants/Enums';
 import { BoardContextIcons } from '../../../../constants/Icons';
 import ConfirmationStep from '../../../common/ConfirmationStep';
 import CustomFieldGroupsStep from '../../../custom-field-groups/CustomFieldGroupsStep';
+import ManageViewsStep from './ManageViewsStep';
 
 import styles from './ActionsStep.module.scss';
 
 const StepTypes = {
   CUSTOM_FIELD_GROUPS: 'CUSTOM_FIELD_GROUPS',
   EMPTY_TRASH: 'EMPTY_TRASH',
+  MANAGE_VIEWS: 'MANAGE_VIEWS',
 };
 
-const ActionsStep = React.memo(({ onClose }) => {
+const ActionsStep = React.memo(({ visibleViews, onToggleView, onClose }) => {
   const board = useSelector(selectors.selectCurrentBoard);
 
   const { withSubscribe, withCustomFieldGroups, withTrashEmptier } = useSelector((state) => {
@@ -87,6 +89,10 @@ const ActionsStep = React.memo(({ onClose }) => {
     openStep(StepTypes.EMPTY_TRASH);
   }, [openStep]);
 
+  const handleManageViewsClick = useCallback(() => {
+    openStep(StepTypes.MANAGE_VIEWS);
+  }, [openStep]);
+
   if (step) {
     switch (step.type) {
       case StepTypes.CUSTOM_FIELD_GROUPS:
@@ -98,6 +104,14 @@ const ActionsStep = React.memo(({ onClose }) => {
             content="common.areYouSureYouWantToEmptyTrash"
             buttonContent="action.emptyTrash"
             onConfirm={handleEmptyTrashConfirm}
+            onBack={handleBack}
+          />
+        );
+      case StepTypes.MANAGE_VIEWS:
+        return (
+          <ManageViewsStep
+            visibleViews={visibleViews}
+            onToggle={onToggleView}
             onBack={handleBack}
           />
         );
@@ -139,6 +153,14 @@ const ActionsStep = React.memo(({ onClose }) => {
               context: 'title',
             })}
           </Menu.Item>
+          {board.context === BoardContexts.BOARD && (
+            <Menu.Item className={styles.menuItem} onClick={handleManageViewsClick}>
+              <Icon name="eye" className={styles.menuItemIcon} />
+              {t('common.manageViews', {
+                context: 'title',
+              })}
+            </Menu.Item>
+          )}
           {withTrashEmptier && (
             <>
               <hr className={styles.divider} />
@@ -172,6 +194,8 @@ const ActionsStep = React.memo(({ onClose }) => {
 });
 
 ActionsStep.propTypes = {
+  visibleViews: PropTypes.arrayOf(PropTypes.oneOf(Object.values(BoardViews))).isRequired,
+  onToggleView: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
 };
 

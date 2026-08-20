@@ -83,31 +83,33 @@ Boardfilter und die bestehende Kartenroute. Details und Prüfnachweise stehen in
 
 ## Phase 3 – Calendar UX
 
+Status: Implementiert am 20.08.2026. Phase 3 ergänzt die lokale Ansichtenverwaltung, eine eigene
+PLANKA-Toolbar mit Monats-/Jahrespicker, Month/Week/Agenda, dynamische Locale-Bundles, bestehende
+PLANKA-Label-Farben sowie responsives und theme-fähig gekapseltes Styling. Es wurden keine Backend-
+oder Dependency-Änderungen vorgenommen. Details und Prüfnachweise stehen in
+[`calendar-phase3.md`](calendar-phase3.md).
+
 ### Umfang
 
-- Week View (`timeGridWeek`) und optional Day/Today.
-- Today/Agenda über die freie List View.
-- Labeldarstellung und verbesserte Benutzer-/Labelfilter.
-- Responsive Toolbar und mobile Darstellung.
-- Vollständige Lokalisierung: Buttons, Datumsformate, erster Wochentag und Accessibility-Texte.
-- Visuelle Zustände für überfällig, bald fällig und erledigt, konsistent zu `DueDateChip`.
-- Lazy Loading und messbare Bundle-/Render-Performance.
+- Lokale, benutzerspezifische Verwaltung von Kanban/Grid/List/Calendar.
+- Eigene responsive Toolbar mit Monats-/Jahrespicker sowie Prev/Today/Next.
+- Month (`dayGridMonth`), Week (`timeGridWeek`) und Agenda (`listMonth`).
+- Labelmarker aus PLANKAs vorhandenen Label-Farbklassen.
+- Dynamisch geladene FullCalendar-Locales für die von PLANKA unterstützten Sprachen.
+- Theme-fähig gekapselte, über Projektbildern kontrastreiche Calendar-Oberfläche.
 
-### Entscheidungen vor Umsetzung
+### Entscheidungen und Grenzen
 
-- Prüfen, ob „Meine Aufgaben“ in einer späteren Phase optional um Task-Assignees erweitert werden
-  soll. Phase 2 verwendet bewusst ausschließlich CardMemberships.
-- Prüfen, ob Kalenderansicht als `defaultView` persistierbar werden soll. Falls ja, erfordert das
-  eine kleine, aber echte Server-Enum-/Validierungsänderung; eine DB-Migration ist für das bereits
-  textuelle Feld voraussichtlich nicht nötig, muss aber separat geprüft werden.
-- Accessibility-Prüfung für Tastatur, Fokus und Screenreader durchführen.
+- „Meine Aufgaben“ bleibt bewusst ausschließlich auf CardMemberships beschränkt.
+- Sichtbare Board-Views und die Calendar-Unteransicht werden pro User/Browser gespeichert; das
+  serverseitige `defaultView` bleibt unverändert.
+- Die Toolbar und der Month Picker besitzen Tastatur-, Fokus- und Screenreader-Beschriftungen.
 
 ### Tests
 
-- View-Wechsel Month/Week/Agenda.
-- Locale-/Wochenstart-Tests mindestens für `de-DE` und `en-US`.
-- Responsive Browser-Tests für Desktop und Mobile.
-- Status-/Labeldarstellung und große Datenmengen.
+- Unit-Tests für View-Preferences, Navigation, Locale-Mapping, Filter-/Zeitsemantik und Labels.
+- Cucumber-Acceptance für Month/Week/Agenda/CardModal und persistiert ausgeblendete Views.
+- Client-Lint, vollständige Tests, Production-Build, Audit und Dependency-/Backend-Guards.
 
 ## Phase 4 – Editing
 

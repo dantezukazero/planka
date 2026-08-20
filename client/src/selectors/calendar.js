@@ -10,15 +10,20 @@ import orm from '../orm';
 import { selectPath } from './router';
 import { selectCurrentUserId } from './users';
 
-const createCalendarEvent = (cardModel) => ({
-  id: cardModel.id,
-  title: cardModel.name,
-  start: cardModel.dueDate,
-  allDay: false,
-  cardId: cardModel.id,
-  userIds: cardModel.users.toRefArray().map((user) => user.id),
-  labelIds: cardModel.labels.toRefArray().map((label) => label.id),
-});
+const createCalendarEvent = (cardModel) => {
+  const labels = cardModel.labels.toRefArray().map(({ id, name, color }) => ({ id, name, color }));
+
+  return {
+    id: cardModel.id,
+    title: cardModel.name,
+    start: cardModel.dueDate,
+    allDay: false,
+    cardId: cardModel.id,
+    userIds: cardModel.users.toRefArray().map((user) => user.id),
+    labelIds: labels.map((label) => label.id),
+    labels,
+  };
+};
 
 export const selectCalendarEventsForCurrentBoard = createReduxOrmSelector(
   orm,
