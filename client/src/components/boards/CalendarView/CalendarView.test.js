@@ -46,6 +46,13 @@ describe('CalendarView visual class contract', () => {
     );
   });
 
+  test('passes official resize deltas and the active view to range normalization', () => {
+    expect(componentSource).toContain('startDelta: info.startDelta');
+    expect(componentSource).toContain('endDelta: info.endDelta');
+    expect(componentSource).toContain('viewType: info.view.type');
+    expect(componentSource).toContain('calendarApi.updateSize();');
+  });
+
   test('keeps the toolbar outside a responsive, internally scrolling Month grid', () => {
     expect(componentSource.indexOf('data-testid="calendar-toolbar"')).toBeLessThan(
       componentSource.indexOf('data-calendar-view={calendarView}'),

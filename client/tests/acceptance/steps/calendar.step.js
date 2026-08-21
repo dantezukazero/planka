@@ -69,8 +69,28 @@ When('the user extends the same-day range from its end by one day', async () => 
   await calendarPage.extendSameDayRangeFromEnd();
 });
 
+When('the user collapses the crowded range from its end by one day', async () => {
+  await calendarPage.collapseCollapsibleRangeFromEnd();
+});
+
+When('the user extends the crowded range from its end by one day', async () => {
+  await calendarPage.extendCollapsibleRangeFromEnd();
+});
+
+When('the user collapses the crowded range from its start by one day', async () => {
+  await calendarPage.collapseCollapsibleRangeFromStart();
+});
+
+When('the user extends the crowded range from its start by one day', async () => {
+  await calendarPage.extendCollapsibleRangeFromStart();
+});
+
 When('the user normally opens the configured same-day range', async () => {
   await calendarPage.getSameDayRangeCardEvent().click();
+});
+
+When('the user normally opens the configured crowded range', async () => {
+  await calendarPage.getCollapsibleRangeCardEvent().click();
 });
 
 When('the user selects the Week calendar view', async () => {
@@ -150,6 +170,29 @@ Then('the configured same-day range should be visible in the expanded week', asy
 Then('the configured same-day range should expose start and end resize handles', async () => {
   await expect(calendarPage.getSameDayRangeStartResizeHandle()).toBeAttached();
   await expect(calendarPage.getSameDayRangeEndResizeHandle()).toBeAttached();
+});
+
+Then('the configured crowded range should be a same-day range', async () => {
+  await expect(calendarPage.getCollapsibleRangeCardEvent()).toHaveClass(
+    /calendar-card-range-event/,
+  );
+  await calendarPage.assertCollapsibleRangeDaySpan(1);
+});
+
+Then('the configured crowded range should be a two-day range', async () => {
+  await expect(calendarPage.getCollapsibleRangeCardEvent()).toHaveClass(
+    /calendar-card-range-event/,
+  );
+  await calendarPage.assertCollapsibleRangeDaySpan(2);
+});
+
+Then('the configured crowded range should expose start and end resize handles', async () => {
+  await expect(calendarPage.getCollapsibleRangeStartResizeHandle()).toBeAttached();
+  await expect(calendarPage.getCollapsibleRangeEndResizeHandle()).toBeAttached();
+});
+
+Then('the original crowded range end time should be preserved', async () => {
+  await calendarPage.assertCollapsibleRangeEndTimePreserved();
 });
 
 Then('no card modal should have opened during the resize gestures', async () => {

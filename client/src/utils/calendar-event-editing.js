@@ -3,6 +3,8 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+import { CalendarViews } from './calendar-preferences';
+
 const isValidDate = (value) => value instanceof Date && !Number.isNaN(value.getTime());
 
 export const applyCalendarEditingPermissions = (events, canEdit) =>
@@ -42,6 +44,50 @@ const shiftByLocalDays = (date, days) => {
   return shiftedDate;
 };
 
+const getCalendarDayDelta = (duration) => {
+  if (!duration || typeof duration !== 'object') {
+    return null;
+  }
+
+  const { years = 0, months = 0, days = 0, milliseconds = 0 } = duration;
+
+  if (years !== 0 || months !== 0 || milliseconds !== 0 || !Number.isInteger(days)) {
+    return null;
+  }
+
+  return days;
+};
+
+const getDayGridRangeResizeUpdate = (oldEvent, { startDelta, endDelta, viewType } = {}) => {
+  if (viewType !== CalendarViews.MONTH) {
+    return undefined;
+  }
+
+  const startDayDelta = getCalendarDayDelta(startDelta);
+  const endDayDelta = getCalendarDayDelta(endDelta);
+
+  if (startDayDelta === null || endDayDelta === null) {
+    return undefined;
+  }
+
+  const isStartChanged = startDayDelta !== 0;
+  const isEndChanged = endDayDelta !== 0;
+
+  if (isStartChanged === isEndChanged) {
+    return undefined;
+  }
+
+  if (isStartChanged) {
+    const startDate = shiftByLocalDays(oldEvent.start, startDayDelta);
+
+    return startDate.getTime() <= oldEvent.end.getTime() ? { startDate } : null;
+  }
+
+  const dueDate = shiftByLocalDays(oldEvent.end, endDayDelta);
+
+  return oldEvent.start.getTime() <= dueDate.getTime() ? { dueDate } : null;
+};
+
 export const getCalendarEventDropUpdate = (event, oldEvent) => {
   if (!event || !oldEvent || !event.allDay || oldEvent.allDay) {
     return getCalendarEventUpdate(event);
@@ -69,7 +115,7 @@ export const getCalendarEventDropUpdate = (event, oldEvent) => {
   };
 };
 
-export const getCalendarEventResizeUpdate = (event, oldEvent) => {
+export const getCalendarEventResizeUpdate = (event, oldEvent, resizeContext) => {
   if (!event || !oldEvent || !isValidDate(event.start) || !isValidDate(oldEvent.start)) {
     return null;
   }
@@ -96,12 +142,17 @@ export const getCalendarEventResizeUpdate = (event, oldEvent) => {
     };
   }
 
-  if (
-    !event.extendedProps.isDateRange ||
-    !isValidDate(event.end) ||
-    !isValidDate(oldEvent.end) ||
-    event.start.getTime() > event.end.getTime()
-  ) {
+  if (!event.extendedProps.isDateRange || !isValidDate(oldEvent.end)) {
+    return null;
+  }
+
+  const dayGridUpdate = getDayGridRangeResizeUpdate(oldEvent, resizeContext);
+
+  if (dayGridUpdate !== undefined) {
+    return dayGridUpdate;
+  }
+
+  if (!isValidDate(event.end) || event.start.getTime() > event.end.getTime()) {
     return null;
   }
 
@@ -137,9 +188,10 @@ export const saveCalendarEventChange = ({
   updateCard,
   getUpdate = getCalendarEventUpdate,
   getRollbackUpdate = getCalendarEventUpdate,
+  updateContext,
 }) => {
-  const data = getUpdate(event, oldEvent);
-  const rollbackData = getRollbackUpdate(oldEvent, event);
+  const data = getUpdate(event, oldEvent, updateContext);
+  const rollbackData = getRollbackUpdate(oldEvent, event, updateContext);
 
   if (!data || !rollbackData) {
     revert();

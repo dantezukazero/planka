@@ -9,6 +9,8 @@ export default class CalendarPage {
     this.crowdedBoardPath = process.env.CALENDAR_CROWDED_BOARD_PATH || this.boardPath;
     this.crowdedCardTitle = process.env.CALENDAR_CROWDED_CARD_TITLE;
     this.sameDayRangeCardTitle = process.env.CALENDAR_SAME_DAY_RANGE_CARD_TITLE;
+    this.collapsibleRangeCardTitle = process.env.CALENDAR_COLLAPSIBLE_RANGE_CARD_TITLE;
+    this.collapsibleRangeEndTimeText = null;
 
     this.calendarSelector = '[data-testid="calendar-view"]';
     this.calendarViewButtonSelector =
@@ -56,6 +58,14 @@ export default class CalendarPage {
     if (!this.sameDayRangeCardTitle) {
       throw new Error(
         'CALENDAR_SAME_DAY_RANGE_CARD_TITLE must identify an editable same-day range in the crowded Month fixture',
+      );
+    }
+  }
+
+  assertCollapsibleRangeConfigured() {
+    if (!this.collapsibleRangeCardTitle) {
+      throw new Error(
+        'CALENDAR_COLLAPSIBLE_RANGE_CARD_TITLE must identify an editable two-day range in the crowded Month fixture',
       );
     }
   }
@@ -167,6 +177,112 @@ export default class CalendarPage {
 
   getSameDayRangeEndResizeHandle() {
     return this.getSameDayRangeCardEvent().locator('.calendar-card-end-resize-handle');
+  }
+
+  getCollapsibleRangeCardEvent() {
+    this.assertCollapsibleRangeConfigured();
+    return page.locator(`${this.calendarSelector} .calendar-card-range-event`, {
+      hasText: this.collapsibleRangeCardTitle,
+    });
+  }
+
+  getCollapsibleRangeStartResizeHandle() {
+    return this.getCollapsibleRangeCardEvent().locator('.calendar-card-start-resize-handle');
+  }
+
+  getCollapsibleRangeEndResizeHandle() {
+    return this.getCollapsibleRangeCardEvent().locator('.calendar-card-end-resize-handle');
+  }
+
+  async rememberCollapsibleRangeEndTime() {
+    const timeTexts = await this.getCollapsibleRangeCardEvent()
+      .locator('.calendar-card-event-time')
+      .allTextContents();
+
+    this.collapsibleRangeEndTimeText = timeTexts.at(-1)?.trim() || null;
+    if (!this.collapsibleRangeEndTimeText) {
+      throw new Error('The collapsible range does not expose its persisted end time');
+    }
+  }
+
+  async assertCollapsibleRangeEndTimePreserved() {
+    if (!this.collapsibleRangeEndTimeText) {
+      throw new Error('The original collapsible range end time was not captured');
+    }
+
+    const timeText = await this.getCollapsibleRangeCardEvent()
+      .locator('.calendar-card-event-time')
+      .allTextContents();
+
+    if (!timeText.join(' ').includes(this.collapsibleRangeEndTimeText)) {
+      throw new Error('The Month resize did not preserve the original range end time');
+    }
+  }
+
+  async resizeCollapsibleRange(handle, dayDelta) {
+    const event = this.getCollapsibleRangeCardEvent();
+    const dayCell = this.getExpandedMonthWeeks().locator('.calendar-month-day-cell').first();
+    const [handleBox, dayCellBox] = await Promise.all([
+      handle.boundingBox(),
+      dayCell.boundingBox(),
+    ]);
+
+    if (!handleBox || !dayCellBox) {
+      throw new Error(
+        'The collapsible range resize handle or expanded day cell has no visible bounding box',
+      );
+    }
+
+    const updateResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PATCH' &&
+        new URL(response.url()).pathname.startsWith('/api/cards/') &&
+        response.ok(),
+    );
+
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      handleBox.x + handleBox.width / 2 + dayCellBox.width * dayDelta,
+      handleBox.y + handleBox.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await updateResponse;
+    await event.waitFor({ state: 'visible' });
+  }
+
+  async collapseCollapsibleRangeFromEnd() {
+    await this.rememberCollapsibleRangeEndTime();
+    await this.resizeCollapsibleRange(this.getCollapsibleRangeEndResizeHandle(), -1);
+  }
+
+  async extendCollapsibleRangeFromEnd() {
+    await this.resizeCollapsibleRange(this.getCollapsibleRangeEndResizeHandle(), 1);
+  }
+
+  async collapseCollapsibleRangeFromStart() {
+    await this.resizeCollapsibleRange(this.getCollapsibleRangeStartResizeHandle(), 1);
+  }
+
+  async extendCollapsibleRangeFromStart() {
+    await this.resizeCollapsibleRange(this.getCollapsibleRangeStartResizeHandle(), -1);
+  }
+
+  async assertCollapsibleRangeDaySpan(expectedDaySpan) {
+    const event = this.getCollapsibleRangeCardEvent();
+    const dayCell = this.getExpandedMonthWeeks().locator('.calendar-month-day-cell').first();
+    const [eventBox, dayCellBox] = await Promise.all([event.boundingBox(), dayCell.boundingBox()]);
+
+    if (!eventBox || !dayCellBox) {
+      throw new Error('The collapsible range or expanded day cell has no visible bounding box');
+    }
+
+    const minimumWidth = dayCellBox.width * (expectedDaySpan - 0.25);
+    const maximumWidth = dayCellBox.width * (expectedDaySpan + 0.25);
+    if (eventBox.width < minimumWidth || eventBox.width > maximumWidth) {
+      throw new Error(`Expected a ${expectedDaySpan}-day range width, got ${eventBox.width}px`);
+    }
   }
 
   async resizeSameDayRange(handle, dayDelta) {

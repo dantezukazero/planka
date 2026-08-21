@@ -167,6 +167,46 @@ war, wird der Interaktionsablauf durch Guard-Unit-Tests, Selector-/Resize-Tests,
 CalendarView-Callback-Verträge und ein Acceptance-Szenario abgedeckt. Phase 4.5 ändert weder
 Backend, Datenbank, Migrationen, Card-Modell, API, Trello-Importer noch Dependencies.
 
+## Phase 4.6 – DayGrid range collapse normalization
+
+FullCalendars offizielles `eventResize` liefert neben `event` und `oldEvent` auch `startDelta`,
+`endDelta` und die aktive View. Die lokale v7.0.2-Implementierung berechnet bei einem horizontalen
+DayGrid-Resize genau eine dieser beiden Grenzen als Duration-Mutation. In einer expandierten
+crowded Month-Woche bleibt der React-Expansion-State davon unabhängig; `updateSize()` aktualisiert
+weiterhin die Segment- und Hit-Zonen. Start- und Endsegment behalten ihre vorhandenen
+`isStart`-/`isEnd`-abhängigen Community-Handles.
+
+Phase 4.6 reicht die offiziellen Resize-Metadaten deshalb ohne globalen Mutable-State an den reinen
+Calendar-Editing-Helper weiter. Nur in `dayGridMonth` wird ein reines ganzzahliges Tagesdelta auf
+den jeweiligen ursprünglichen Zeitpunkt aus `oldEvent` angewendet. Ein rechtes Resize verschiebt
+damit das ursprüngliche Ende um lokale Kalendertage, ein linkes Resize entsprechend den
+ursprünglichen Start. Die lokale Uhrzeit bleibt erhalten; verwendet wird dieselbe `Date.setDate()`-
+Semantik wie beim bestehenden Month-Drag, nicht eine starre 24-Stunden-Millisekundenrechnung. So
+wird beispielsweise `20.08. 09:00 – 21.08. 17:00` nach `endDelta = -1 Tag` korrekt zu
+`20.08. 09:00 – 20.08. 17:00`, selbst wenn FullCalendars gerenderter Endpunkt auf einer
+Tagesgrenze liegt.
+
+Week/`timeGridWeek` verwendet weiterhin unverändert die exakten von FullCalendar gelieferten
+Zeitpunkte, einschließlich Minuten-Resizes. Fehlen reine DayGrid-Tagesdeltas, greift ebenfalls der
+bisherige exakte Pfad. Die Ordnung `startDate <= dueDate` wird nach der Normalisierung geprüft. Ein
+auf einen Tag verkürztes Event bleibt mit beiden Zeitpunkten und `isDateRange = true` ein echter
+Range, behält beide Handles und kann nach Reload erneut mehrtägig erweitert werden. Due-only-Resize,
+Drag, Click-Guard und CardModal-Semantik bleiben unverändert.
+
+Der optimistische Save-Pfad erhält den normalisierten Grenzwert und weiterhin nur das jeweils
+betroffene Feld. Bei einem API-Fehler werden Redux-Wert und FullCalendar-Event über die vorhandenen
+grenzspezifischen Rollback-Daten vollständig auf den ursprünglichen Multi-Day-Range zurückgesetzt;
+die Month-Expansion bleibt bedienbar.
+
+Das Acceptance-Szenario erweitert eine crowded Month-Woche, kollabiert einen Two-Day-Range rechts
+und links zu Same-Day, prüft Uhrzeiterhalt, Range-Klasse, beide Handles, Reload, erneutes Erweitern
+und den unveränderten Click-Guard. Dafür wird zusätzlich eine editierbare Two-Day-Fixture über
+`CALENDAR_COLLAPSIBLE_RANGE_CARD_TITLE` erwartet. In der lokalen Ausführungsumgebung war erneut
+keine Browser-Sitzung verfügbar; der Cucumber-Dry-Run sowie Unit-, Selector- und
+CalendarView-Vertragstests decken den Ablauf stattdessen reproduzierbar ab. Phase 4.6 ändert weder
+Backend, Datenbank, Migrationen, Card-Modell, API, Trello-Importer, Dependencies noch den
+GHCR-Workflow.
+
 ## FullCalendar-Mapping und Zeitsemantik
 
 Ein Due-only-Termin wird mit `start = dueDate`, ohne `end`, und `allDay = false` gemappt. Ein gültiger

@@ -313,13 +313,14 @@ const CalendarView = React.memo(() => {
   );
 
   const saveEventChange = useCallback(
-    ({ event, oldEvent, revert }, getUpdate, getRollbackUpdate) => {
+    ({ event, oldEvent, revert }, getUpdate, getRollbackUpdate, updateContext) => {
       saveCalendarEventChange({
         event,
         oldEvent,
         revert,
         getUpdate,
         getRollbackUpdate,
+        updateContext,
         updateCard: (cardId, data, options) => {
           dispatch(entryActions.updateCard(cardId, data, options));
         },
@@ -337,7 +338,11 @@ const CalendarView = React.memo(() => {
 
   const handleEventResize = useCallback(
     (info) => {
-      saveEventChange(info, getCalendarEventResizeUpdate, getCalendarEventResizeRollbackUpdate);
+      saveEventChange(info, getCalendarEventResizeUpdate, getCalendarEventResizeRollbackUpdate, {
+        startDelta: info.startDelta,
+        endDelta: info.endDelta,
+        viewType: info.view.type,
+      });
     },
     [saveEventChange],
   );
@@ -349,7 +354,11 @@ const CalendarView = React.memo(() => {
 
       return (
         <div className={styles.eventContent} title={event.title}>
-          {visibleTimeText && <span className={styles.eventTime}>{visibleTimeText}</span>}
+          {visibleTimeText && (
+            <span className={classNames(styles.eventTime, 'calendar-card-event-time')}>
+              {visibleTimeText}
+            </span>
+          )}
           {labels.length > 0 && (
             <span className={styles.labelMarkers} aria-hidden="true">
               {labels.map((label) => (

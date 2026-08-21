@@ -88,3 +88,33 @@ Feature: Board calendar
     Then no card modal should have opened during the resize gestures
     When the user normally opens the configured same-day range
     Then the existing card modal should be visible
+
+  Scenario: Collapse and re-extend a multi-day range inside an expanded month week
+    Given the user is logged in with email or username "demo" and password "demo"
+    And the configured crowded calendar board is open
+    When the user selects the Calendar board view
+    And the user expands the crowded calendar week
+    Then the configured crowded range should be a two-day range
+    And the configured crowded range should expose start and end resize handles
+    When the user collapses the crowded range from its end by one day
+    Then the configured crowded range should be a same-day range
+    And the original crowded range end time should be preserved
+    And the configured crowded range should expose start and end resize handles
+    And no card modal should have opened during the resize gestures
+    When the user reloads the board
+    And the user expands the crowded calendar week
+    Then the configured crowded range should be a same-day range
+    And the configured crowded range should expose start and end resize handles
+    When the user extends the crowded range from its end by one day
+    Then the configured crowded range should be a two-day range
+    When the user collapses the crowded range from its start by one day
+    Then the configured crowded range should be a same-day range
+    And the configured crowded range should expose start and end resize handles
+    When the user reloads the board
+    And the user expands the crowded calendar week
+    Then the configured crowded range should be a same-day range
+    When the user extends the crowded range from its start by one day
+    Then the configured crowded range should be a two-day range
+    And no card modal should have opened during the resize gestures
+    When the user normally opens the configured crowded range
+    Then the existing card modal should be visible

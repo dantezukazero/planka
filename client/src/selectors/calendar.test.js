@@ -231,20 +231,21 @@ describe('selectCalendarEventsForCurrentBoard', () => {
   test('maps a same-day range without changing either timestamp', () => {
     const startDate = new Date('2026-08-20T09:00:00.000Z');
     const dueDate = new Date('2026-08-20T17:00:00.000Z');
-    const state = createState({
-      cards: [{ id: 'card-1', startDate, dueDate }],
+    const states = [
+      createState({ cards: [{ id: 'card-1', startDate, dueDate }] }),
+      createState({ cards: [{ id: 'card-1', startDate, dueDate }] }),
+    ];
+
+    states.forEach((state) => {
+      expect(selectCalendarEventsForCurrentBoard(state)[0]).toEqual(
+        expect.objectContaining({
+          start: startDate,
+          end: dueDate,
+          display: 'block',
+          extendedProps: expect.objectContaining({ isDateRange: true }),
+        }),
+      );
     });
-
-    const [event] = selectCalendarEventsForCurrentBoard(state);
-
-    expect(event).toEqual(
-      expect.objectContaining({
-        start: startDate,
-        end: dueDate,
-        display: 'block',
-        extendedProps: expect.objectContaining({ isDateRange: true }),
-      }),
-    );
   });
 
   test('falls back to the due-date instant for an invalid stored range', () => {
