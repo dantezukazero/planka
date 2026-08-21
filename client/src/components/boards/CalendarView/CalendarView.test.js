@@ -35,6 +35,17 @@ describe('CalendarView visual class contract', () => {
     expect(componentSource).toContain('setExpandedMonthWeeks(resetExpandedMonthWeeks);');
   });
 
+  test('guards only clicks immediately following FullCalendar drag or resize lifecycles', () => {
+    expect(componentSource).toContain('eventDragStart={handleEventInteractionStart}');
+    expect(componentSource).toContain('eventDragStop={handleEventInteractionStop}');
+    expect(componentSource).toContain('eventResizeStart={handleEventInteractionStart}');
+    expect(componentSource).toContain('eventResizeStop={handleEventInteractionStop}');
+    expect(componentSource).toContain('if (eventInteractionGuardRef.current.shouldIgnoreClick())');
+    expect(componentSource).toContain(
+      "dispatch(push(Paths.CARDS.replace(':id', event.extendedProps.cardId)));",
+    );
+  });
+
   test('keeps the toolbar outside a responsive, internally scrolling Month grid', () => {
     expect(componentSource.indexOf('data-testid="calendar-toolbar"')).toBeLessThan(
       componentSource.indexOf('data-calendar-view={calendarView}'),

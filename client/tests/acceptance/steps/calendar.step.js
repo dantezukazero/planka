@@ -57,6 +57,22 @@ When('the user navigates to the next calendar month', async () => {
   await calendarPage.navigateToNextMonth();
 });
 
+When('the user extends the same-day range from its start by one day', async () => {
+  await calendarPage.extendSameDayRangeFromStart();
+});
+
+When('the user shrinks the range back to the same day from its start', async () => {
+  await calendarPage.shrinkSameDayRangeFromStart();
+});
+
+When('the user extends the same-day range from its end by one day', async () => {
+  await calendarPage.extendSameDayRangeFromEnd();
+});
+
+When('the user normally opens the configured same-day range', async () => {
+  await calendarPage.getSameDayRangeCardEvent().click();
+});
+
 When('the user selects the Week calendar view', async () => {
   await calendarPage.selectCalendarSubview('timeGridWeek');
 });
@@ -125,6 +141,19 @@ Then('the calendar card move should be saved', async () => {
 
 Then('the Month calendar should start with no expanded weeks', async () => {
   await expect(calendarPage.getExpandedMonthWeeks()).toHaveCount(0);
+});
+
+Then('the configured same-day range should be visible in the expanded week', async () => {
+  await expect(calendarPage.getSameDayRangeCardEvent()).toBeVisible();
+});
+
+Then('the configured same-day range should expose start and end resize handles', async () => {
+  await expect(calendarPage.getSameDayRangeStartResizeHandle()).toBeAttached();
+  await expect(calendarPage.getSameDayRangeEndResizeHandle()).toBeAttached();
+});
+
+Then('no card modal should have opened during the resize gestures', async () => {
+  await expect(calendarPage.getCardModal()).toHaveCount(0);
 });
 
 Then('the configured range card should expose start and end resize handles', async () => {

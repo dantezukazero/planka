@@ -74,3 +74,17 @@ Feature: Board calendar
     Then the calendar card move should be saved
     When the user navigates to the next calendar month
     Then the Month calendar should start with no expanded weeks
+
+  Scenario: Keep a same-day range resizable inside an expanded month week
+    Given the user is logged in with email or username "demo" and password "demo"
+    And the configured crowded calendar board is open
+    When the user selects the Calendar board view
+    And the user expands the crowded calendar week
+    Then the configured same-day range should be visible in the expanded week
+    And the configured same-day range should expose start and end resize handles
+    When the user extends the same-day range from its start by one day
+    And the user shrinks the range back to the same day from its start
+    And the user extends the same-day range from its end by one day
+    Then no card modal should have opened during the resize gestures
+    When the user normally opens the configured same-day range
+    Then the existing card modal should be visible

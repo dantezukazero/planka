@@ -140,6 +140,33 @@ Verfügung; ein reproduzierbarer Pixel-/Interaktionstest war deshalb nicht mögl
 ist stattdessen durch Unit-Tests der Höhen-/State-Logik, CalendarView-DOM-/Callback-Verträge, das
 Acceptance-Szenario und den Production Build abgesichert.
 
+## Phase 4.5 – Same-Day Range Resize und Interaction Guard
+
+Alle Kalenderkarten erhalten nun einheitlich FullCalendars `display: 'block'`. Due-only-Termine,
+Same-Day-Ranges und mehrtägige Ranges erscheinen damit in `dayGridMonth` als interaktive Balken.
+Ein persistierter Same-Day-Range behält unverändert `start`, `end` und
+`extendedProps.isDateRange = true`; er wird weder beim Mapping noch beim Resize zu Due-only
+umgedeutet. In Week und Agenda bleiben dieselben Zeitwerte, Zeittexte, Labelmarker und Eventklassen
+erhalten.
+
+Linkes Resize schreibt weiterhin ausschließlich `startDate`, rechtes ausschließlich `dueDate`.
+Dadurch kann ein Same-Day-Range von beiden Seiten zu einem mehrtägigen Range wachsen, ein
+mehrtägiger Range auf einen Tag schrumpfen und anschließend erneut erweitert werden. Drag verschiebt
+beide Grenzen gemeinsam. Editing-Permissions, optimistisches Speichern, Realtime und der bestehende
+grenzspezifische Fehler-Rollback bleiben unverändert.
+
+Ein kleiner Interaction Guard verwendet FullCalendars offizielle Drag-/Resize-Start- und
+Stop-Callbacks. Er blockiert `eventClick` nur während der Geste und bis zum unmittelbar folgenden
+Animation-Frame. Damit kann ein aus dem Resize entstehender Klick kein CardModal öffnen; ein
+normaler Klick ist ohne künstliche Verzögerung weiterhin sofort aktiv. Der Guard räumt einen noch
+geplanten Frame beim nächsten Start und beim Unmounten auf.
+
+Phase-4.4-Expansion und `calendarApi.updateSize()` bleiben unverändert, sodass dieselben Handles und
+Hit-Zones auch in einer erweiterten Monatswoche gelten. Da keine lokale Browser-Sitzung verbunden
+war, wird der Interaktionsablauf durch Guard-Unit-Tests, Selector-/Resize-Tests,
+CalendarView-Callback-Verträge und ein Acceptance-Szenario abgedeckt. Phase 4.5 ändert weder
+Backend, Datenbank, Migrationen, Card-Modell, API, Trello-Importer noch Dependencies.
+
 ## FullCalendar-Mapping und Zeitsemantik
 
 Ein Due-only-Termin wird mit `start = dueDate`, ohne `end`, und `allDay = false` gemappt. Ein gültiger

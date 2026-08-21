@@ -8,6 +8,7 @@ export default class CalendarPage {
     this.dueOnlyResizeCardTitle = process.env.CALENDAR_DUE_ONLY_RESIZE_CARD_TITLE;
     this.crowdedBoardPath = process.env.CALENDAR_CROWDED_BOARD_PATH || this.boardPath;
     this.crowdedCardTitle = process.env.CALENDAR_CROWDED_CARD_TITLE;
+    this.sameDayRangeCardTitle = process.env.CALENDAR_SAME_DAY_RANGE_CARD_TITLE;
 
     this.calendarSelector = '[data-testid="calendar-view"]';
     this.calendarViewButtonSelector =
@@ -47,6 +48,14 @@ export default class CalendarPage {
     if (!this.crowdedBoardPath || !this.crowdedCardTitle) {
       throw new Error(
         'CALENDAR_CROWDED_BOARD_PATH (or CALENDAR_BOARD_PATH) and CALENDAR_CROWDED_CARD_TITLE must identify a crowded editable Month fixture',
+      );
+    }
+  }
+
+  assertSameDayRangeConfigured() {
+    if (!this.sameDayRangeCardTitle) {
+      throw new Error(
+        'CALENDAR_SAME_DAY_RANGE_CARD_TITLE must identify an editable same-day range in the crowded Month fixture',
       );
     }
   }
@@ -143,6 +152,66 @@ export default class CalendarPage {
     return page.locator(`${this.calendarSelector} .calendar-card-event`, {
       hasText: this.crowdedCardTitle,
     });
+  }
+
+  getSameDayRangeCardEvent() {
+    this.assertSameDayRangeConfigured();
+    return page.locator(`${this.calendarSelector} .calendar-card-range-event`, {
+      hasText: this.sameDayRangeCardTitle,
+    });
+  }
+
+  getSameDayRangeStartResizeHandle() {
+    return this.getSameDayRangeCardEvent().locator('.calendar-card-start-resize-handle');
+  }
+
+  getSameDayRangeEndResizeHandle() {
+    return this.getSameDayRangeCardEvent().locator('.calendar-card-end-resize-handle');
+  }
+
+  async resizeSameDayRange(handle, dayDelta) {
+    const event = this.getSameDayRangeCardEvent();
+    const dayCell = this.getExpandedMonthWeeks().locator('.calendar-month-day-cell').first();
+    const [handleBox, dayCellBox] = await Promise.all([
+      handle.boundingBox(),
+      dayCell.boundingBox(),
+    ]);
+
+    if (!handleBox || !dayCellBox) {
+      throw new Error(
+        'The same-day resize handle or expanded day cell has no visible bounding box',
+      );
+    }
+
+    const updateResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PATCH' &&
+        new URL(response.url()).pathname.startsWith('/api/cards/') &&
+        response.ok(),
+    );
+
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      handleBox.x + handleBox.width / 2 + dayCellBox.width * dayDelta,
+      handleBox.y + handleBox.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await updateResponse;
+    await event.waitFor({ state: 'visible' });
+  }
+
+  async extendSameDayRangeFromStart() {
+    await this.resizeSameDayRange(this.getSameDayRangeStartResizeHandle(), -1);
+  }
+
+  async shrinkSameDayRangeFromStart() {
+    await this.resizeSameDayRange(this.getSameDayRangeStartResizeHandle(), 1);
+  }
+
+  async extendSameDayRangeFromEnd() {
+    await this.resizeSameDayRange(this.getSameDayRangeEndResizeHandle(), 1);
   }
 
   async expandCrowdedWeek() {

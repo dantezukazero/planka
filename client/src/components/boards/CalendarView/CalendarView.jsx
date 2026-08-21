@@ -41,6 +41,7 @@ import {
   getCalendarEventClassName,
   getCalendarEventTimeText,
 } from '../../../utils/calendar-event-display';
+import createCalendarEventInteractionGuard from '../../../utils/calendar-event-interaction';
 import {
   CALENDAR_EXPANDED_WEEK_ATTRIBUTE,
   CALENDAR_EXPANDED_WEEK_MIN_HEIGHT_PROPERTY,
@@ -85,6 +86,11 @@ const CalendarView = React.memo(() => {
   const [fullCalendarLocale, setFullCalendarLocale] = useState('en');
   const [isMyTasksOnly, setIsMyTasksOnly] = useState(false);
   const [expandedMonthWeeks, setExpandedMonthWeeks] = useState(() => new Map());
+  const eventInteractionGuardRef = useRef(null);
+
+  if (eventInteractionGuardRef.current === null) {
+    eventInteractionGuardRef.current = createCalendarEventInteractionGuard();
+  }
 
   const language = i18n.resolvedLanguage || 'en-US';
   const visibleEvents = isMyTasksOnly ? myEvents : events;
@@ -106,6 +112,13 @@ const CalendarView = React.memo(() => {
       isCurrent = false;
     };
   }, [language]);
+
+  useEffect(
+    () => () => {
+      eventInteractionGuardRef.current.clear((frame) => window.cancelAnimationFrame(frame));
+    },
+    [],
+  );
 
   const plugins = useMemo(
     () => [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, classicThemePlugin],
@@ -277,8 +290,23 @@ const CalendarView = React.memo(() => {
     }
   }, []);
 
+  const handleEventInteractionStart = useCallback(() => {
+    eventInteractionGuardRef.current.start((frame) => window.cancelAnimationFrame(frame));
+  }, []);
+
+  const handleEventInteractionStop = useCallback(() => {
+    eventInteractionGuardRef.current.stop(
+      (callback) => window.requestAnimationFrame(callback),
+      (frame) => window.cancelAnimationFrame(frame),
+    );
+  }, []);
+
   const handleEventClick = useCallback(
     ({ event }) => {
+      if (eventInteractionGuardRef.current.shouldIgnoreClick()) {
+        return;
+      }
+
       dispatch(push(Paths.CARDS.replace(':id', event.extendedProps.cardId)));
     },
     [dispatch],
@@ -454,7 +482,11 @@ const CalendarView = React.memo(() => {
           dayCellWillUnmount={handleDayCellWillUnmount}
           eventContent={renderEventContent}
           eventClick={handleEventClick}
+          eventDragStart={handleEventInteractionStart}
+          eventDragStop={handleEventInteractionStop}
           eventDrop={handleEventDrop}
+          eventResizeStart={handleEventInteractionStart}
+          eventResizeStop={handleEventInteractionStop}
           eventResize={handleEventResize}
           datesSet={handleDatesSet}
         />

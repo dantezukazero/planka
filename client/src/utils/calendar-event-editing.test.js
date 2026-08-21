@@ -41,6 +41,27 @@ describe('calendar event editing', () => {
     ]);
   });
 
+  test('keeps a same-day range editable and duration-resizable', () => {
+    const [event] = applyCalendarEditingPermissions(
+      [
+        createEvent({
+          start: new Date('2026-08-20T09:00:00.000Z'),
+          end: new Date('2026-08-20T17:00:00.000Z'),
+          isDateRange: true,
+        }),
+      ],
+      true,
+    );
+
+    expect(event).toEqual(
+      expect.objectContaining({
+        startEditable: true,
+        durationEditable: true,
+        extendedProps: expect.objectContaining({ isDateRange: true }),
+      }),
+    );
+  });
+
   test('moves a single due-date event without persisting its synthetic end', () => {
     const dueDate = new Date('2026-08-21T12:00:00.000Z');
     const syntheticEnd = new Date('2026-08-21T13:00:00.000Z');
@@ -128,6 +149,76 @@ describe('calendar event editing', () => {
     });
 
     expect(getCalendarEventResizeUpdate(event, oldEvent)).toEqual({
+      dueDate: event.end,
+    });
+  });
+
+  test('extends a same-day range to multiple days from either resize boundary', () => {
+    const oldEvent = createEvent({
+      start: new Date('2026-08-20T09:00:00.000Z'),
+      end: new Date('2026-08-20T17:00:00.000Z'),
+      isDateRange: true,
+    });
+    const startResize = createEvent({
+      start: new Date('2026-08-19T09:00:00.000Z'),
+      end: oldEvent.end,
+      isDateRange: true,
+    });
+    const endResize = createEvent({
+      start: oldEvent.start,
+      end: new Date('2026-08-21T17:00:00.000Z'),
+      isDateRange: true,
+    });
+
+    expect(getCalendarEventResizeUpdate(startResize, oldEvent)).toEqual({
+      startDate: startResize.start,
+    });
+    expect(getCalendarEventResizeUpdate(endResize, oldEvent)).toEqual({
+      dueDate: endResize.end,
+    });
+  });
+
+  test('keeps a range resizable after shrinking it to one day', () => {
+    const multiDayEvent = createEvent({
+      start: new Date('2026-08-20T09:00:00.000Z'),
+      end: new Date('2026-08-22T17:00:00.000Z'),
+      isDateRange: true,
+    });
+    const sameDayEvent = createEvent({
+      start: multiDayEvent.start,
+      end: new Date('2026-08-20T17:00:00.000Z'),
+      isDateRange: true,
+    });
+
+    expect(getCalendarEventResizeUpdate(sameDayEvent, multiDayEvent)).toEqual({
+      dueDate: sameDayEvent.end,
+    });
+
+    const extendedAgainEvent = createEvent({
+      start: sameDayEvent.start,
+      end: new Date('2026-08-21T17:00:00.000Z'),
+      isDateRange: true,
+    });
+
+    expect(getCalendarEventResizeUpdate(extendedAgainEvent, sameDayEvent)).toEqual({
+      dueDate: extendedAgainEvent.end,
+    });
+  });
+
+  test('drags a same-day range by moving start and end together', () => {
+    const oldEvent = createEvent({
+      start: new Date('2026-08-20T09:00:00.000Z'),
+      end: new Date('2026-08-20T17:00:00.000Z'),
+      isDateRange: true,
+    });
+    const event = createEvent({
+      start: new Date('2026-08-21T09:00:00.000Z'),
+      end: new Date('2026-08-21T17:00:00.000Z'),
+      isDateRange: true,
+    });
+
+    expect(getCalendarEventDropUpdate(event, oldEvent)).toEqual({
+      startDate: event.start,
       dueDate: event.end,
     });
   });
@@ -287,6 +378,43 @@ describe('calendar event editing', () => {
         onFailure: revert,
       },
     );
+  });
+
+  test('rolls back a failed same-day to multi-day resize without changing range semantics', () => {
+    const updateCard = jest.fn();
+    const revert = jest.fn();
+    const oldEvent = createEvent({
+      start: new Date('2026-08-20T09:00:00.000Z'),
+      end: new Date('2026-08-20T17:00:00.000Z'),
+      isDateRange: true,
+    });
+    const event = createEvent({
+      start: oldEvent.start,
+      end: new Date('2026-08-21T17:00:00.000Z'),
+      isDateRange: true,
+    });
+
+    expect(
+      saveCalendarEventChange({
+        event,
+        oldEvent,
+        revert,
+        updateCard,
+        getUpdate: getCalendarEventResizeUpdate,
+        getRollbackUpdate: getCalendarEventResizeRollbackUpdate,
+      }),
+    ).toBe(true);
+    expect(updateCard).toHaveBeenCalledWith(
+      'card-1',
+      { dueDate: event.end },
+      {
+        rollbackData: { dueDate: oldEvent.end },
+        onFailure: revert,
+      },
+    );
+
+    updateCard.mock.calls[0][2].onFailure(new Error('save failed'));
+    expect(revert).toHaveBeenCalledTimes(1);
   });
 
   test('restores the original due-only state after a range-creation save failure', () => {

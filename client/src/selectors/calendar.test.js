@@ -200,11 +200,11 @@ describe('selectCalendarEventsForCurrentBoard', () => {
       expect.objectContaining({
         start: startDate,
         end: dueDate,
+        display: 'block',
         allDay: false,
         extendedProps: expect.objectContaining({ isDateRange: true }),
       }),
     );
-    expect(selectCalendarEventsForCurrentBoard(state)[0]).not.toHaveProperty('display');
   });
 
   test('keeps a due-only card open-ended and block-rendered across a selector reload', () => {
@@ -237,7 +237,14 @@ describe('selectCalendarEventsForCurrentBoard', () => {
 
     const [event] = selectCalendarEventsForCurrentBoard(state);
 
-    expect([event.start, event.end]).toEqual([startDate, dueDate]);
+    expect(event).toEqual(
+      expect.objectContaining({
+        start: startDate,
+        end: dueDate,
+        display: 'block',
+        extendedProps: expect.objectContaining({ isDateRange: true }),
+      }),
+    );
   });
 
   test('falls back to the due-date instant for an invalid stored range', () => {
